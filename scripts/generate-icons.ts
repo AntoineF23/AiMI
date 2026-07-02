@@ -570,6 +570,24 @@ oYYYYYoYYoYYOOo
 ....oWo
 ....oo`)
   },
+  egg: {
+    palette: { W: '#f4f4f8', P: '#ff9ecf', S: '#e2e2ec' },
+    rows: grid(`
+.
+.....ooooo
+....oWWWWWo
+...oWWWWWWWo
+..oWWWPWWWWWo
+..oWWPWPWWWWo
+..oWWWWWWWSWo
+.oWWWPWWWWWSWo
+.oWWPWPWWWWSWo
+.oWWWWWWWWSSWo
+.oWWWWWWWWSWWo
+..oWWWWWSSWo
+..oWWSSSSWo
+...ooooooo`)
+  },
   zzz: {
     palette: { W: '#a78bfa' },
     rows: grid(`

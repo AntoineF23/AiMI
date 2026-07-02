@@ -48,11 +48,12 @@ export function LevelUpBanner({ level, coins }: { level: number; coins: number }
   )
 }
 
-export function Bubble({ bubble }: { bubble: NonNullable<UiState['bubble']> }) {
+export function Bubble({ bubble, onClick }: { bubble: NonNullable<UiState['bubble']>; onClick?: () => void }) {
   const x = Math.min(window.innerWidth - 140, Math.max(140, bubble.anchor.x))
   return (
-    <div className="bubble hit" style={{ left: x, top: bubble.anchor.y - 26 }}>
+    <div className="bubble hit" style={{ left: x, top: bubble.anchor.y - 26 }} onClick={onClick}>
       {bubble.text}
+      {onClick && <div className="bubble-cta">CLICK TO ANSWER</div>}
       <div className="bubble-tail" />
     </div>
   )

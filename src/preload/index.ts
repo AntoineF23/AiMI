@@ -16,6 +16,46 @@ const api = {
   openSettings(): void {
     ipcRenderer.send('open-settings')
   },
+  memory: {
+    facts(): Promise<{ id: number; content: string; category: string; source: string; created_at: string }[]> {
+      return ipcRenderer.invoke('memory:facts')
+    },
+    profile(): Promise<string | null> {
+      return ipcRenderer.invoke('memory:profile')
+    },
+    deleteFact(id: number): void {
+      ipcRenderer.send('memory:delete-fact', id)
+    },
+    wipe(): void {
+      ipcRenderer.send('memory:wipe')
+    },
+    recentChat(limit: number): Promise<ChatMessage[]> {
+      return ipcRenderer.invoke('memory:recent-chat', limit)
+    }
+  },
+  pet: {
+    rename(name: string): void {
+      ipcRenderer.send('pet:rename', name)
+    },
+    setMuted(muted: boolean): void {
+      ipcRenderer.send('pet:set-muted', muted)
+    },
+    onRenamed(cb: (name: string) => void): () => void {
+      const listener = (_e: unknown, name: string) => cb(name)
+      ipcRenderer.on('pet:renamed', listener)
+      return () => ipcRenderer.removeListener('pet:renamed', listener)
+    },
+    onMuted(cb: (muted: boolean) => void): () => void {
+      const listener = (_e: unknown, muted: boolean) => cb(muted)
+      ipcRenderer.on('pet:muted', listener)
+      return () => ipcRenderer.removeListener('pet:muted', listener)
+    }
+  },
+  onBrainSay(cb: (text: string, isQuestion: boolean) => void): () => void {
+    const listener = (_e: unknown, p: { text: string; isQuestion: boolean }) => cb(p.text, p.isQuestion)
+    ipcRenderer.on('brain:say', listener)
+    return () => ipcRenderer.removeListener('brain:say', listener)
+  },
   ai: {
     getSettings(): Promise<AiSettingsPublic> {
       return ipcRenderer.invoke('ai:settings:get')

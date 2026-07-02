@@ -15,6 +15,8 @@ export interface GameState {
   streak: { count: number; lastDay: string }
   stickers: string[]
   lastDailyGift: string
+  muted: boolean
+  onboardedAt: string
   createdAt: string
 }
 
@@ -26,5 +28,7 @@ export const DEFAULT_GAME_STATE: GameState = {
   streak: { count: 0, lastDay: '' },
   stickers: [],
   lastDailyGift: '',
+  muted: false,
+  onboardedAt: '',
   createdAt: new Date().toISOString()
 }

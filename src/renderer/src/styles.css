@@ -555,6 +555,139 @@ img.px {
   gap: 6px;
 }
 
+.bubble-cta {
+  margin-top: 8px;
+  font-size: 6px;
+  color: var(--accent-2);
+}
+
+.bubble:hover .bubble-cta {
+  color: #ff5c8a;
+}
+
+/* ---------------------------------------------------------- onboarding --- */
+
+.onboard {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 440px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  background: var(--panel);
+  border: 3px solid var(--ink);
+  box-shadow:
+    inset 0 0 0 2px var(--border),
+    8px 8px 0 rgba(20, 12, 40, 0.5);
+  color: #fff;
+  padding: 28px 28px 20px;
+  pointer-events: auto;
+  animation: pop-in 0.25s steps(4) both;
+  text-align: center;
+}
+
+.onboard-icon {
+  animation: gift-bounce 1.2s steps(4) infinite;
+}
+
+.onboard-title {
+  font-size: 13px;
+  color: var(--gold);
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
+  line-height: 1.6;
+}
+
+.onboard-text {
+  font-size: 7px;
+  line-height: 1.9;
+  opacity: 0.85;
+}
+
+.onboard-text.dim {
+  opacity: 0.55;
+}
+
+.onboard-input {
+  width: 240px;
+  padding: 12px;
+  border: 2px solid var(--border);
+  background: var(--ink);
+  color: #fff;
+  font-size: 10px;
+  font-family: inherit;
+  outline: none;
+  text-align: center;
+}
+
+.onboard-input:focus {
+  border-color: var(--accent);
+}
+
+.onboard-row {
+  display: flex;
+  gap: 10px;
+}
+
+.onboard-btn {
+  padding: 12px 20px;
+  font-size: 9px;
+  font-family: inherit;
+  cursor: pointer;
+  border: 3px solid var(--ink);
+  background: var(--accent-2);
+  color: #fff;
+  box-shadow: 3px 3px 0 rgba(20, 12, 40, 0.5);
+}
+
+.onboard-btn.ghost {
+  background: var(--panel-2);
+  border-color: var(--border);
+}
+
+.onboard-btn:active {
+  translate: 2px 2px;
+  box-shadow: none;
+}
+
+.onboard-btn:disabled {
+  opacity: 0.4;
+}
+
+.onboard-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 7px;
+  text-align: left;
+}
+
+.onboard-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.6;
+}
+
+.onboard-dots {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.onboard-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--border);
+}
+
+.onboard-dot.active {
+  background: var(--gold);
+}
+
 /* -------------------------------------------------------------- album --- */
 
 .album {

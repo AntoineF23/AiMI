@@ -13,8 +13,14 @@ const GREETINGS = [
 
 const QUICK_CHIPS = ["I'm coding", 'Watching YouTube', 'Working on something big', 'Taking a break']
 
-// survives panel close/reopen within a session
+// survives panel close/reopen within a session; seeded from SQLite history
 let sessionMessages: ChatMessage[] = []
+let historyLoaded = false
+
+/** Lets the proactive brain inject its bubble lines into the conversation. */
+export function pushSessionAssistant(text: string): void {
+  sessionMessages = [...sessionMessages, { role: 'assistant', content: text }]
+}
 
 interface Props {
   anchor: Anchor
@@ -39,16 +45,18 @@ export function ChatPanel({ anchor, petName, level, streak, engine, onUserMessag
     window.aimi.ai.getSettings().then((s) => setConfigured(!!s.provider && !!s.model))
   }, [])
 
-  // greeting seeded locally, no API call
+  // seed from persistent history; greeting only for a truly fresh pet
   useEffect(() => {
-    if (sessionMessages.length === 0) {
-      const greeting: ChatMessage = {
-        role: 'assistant',
-        content: GREETINGS[Math.floor(Math.random() * GREETINGS.length)]
-      }
-      sessionMessages = [greeting]
+    if (historyLoaded) return
+    historyLoaded = true
+    window.aimi.memory.recentChat(12).then((hist) => {
+      if (sessionMessages.length > 0) return
+      sessionMessages =
+        hist.length > 0
+          ? hist
+          : [{ role: 'assistant' as const, content: GREETINGS[Math.floor(Math.random() * GREETINGS.length)] }]
       setMessages(sessionMessages)
-    }
+    })
   }, [])
 
   useEffect(() => {

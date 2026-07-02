@@ -4,6 +4,8 @@ import { join } from 'node:path'
 import { createTray } from './tray'
 import { registerStoreIpc } from './store'
 import { registerAiIpc } from './ai/chat'
+import { registerMemoryIpc } from './memory'
+import { startBrain } from './brain'
 
 let petWindow: BrowserWindow | null = null
 let settingsWindow: BrowserWindow | null = null
@@ -93,7 +95,9 @@ app.whenReady().then(() => {
 
   registerStoreIpc()
   registerAiIpc(() => petWindow)
+  registerMemoryIpc()
   petWindow = createPetWindow()
+  startBrain(() => petWindow)
 
   createTray({
     onToggleVisible: () => {
@@ -106,6 +110,14 @@ app.whenReady().then(() => {
   })
 
   ipcMain.on('open-settings', openSettingsWindow)
+
+  // settings window → pet window relays
+  ipcMain.on('pet:rename', (_e, name: string) => {
+    petWindow?.webContents.send('pet:renamed', String(name).slice(0, 20))
+  })
+  ipcMain.on('pet:set-muted', (_e, muted: boolean) => {
+    petWindow?.webContents.send('pet:muted', !!muted)
+  })
 
   screen.on('display-metrics-changed', syncBoundsToDisplay)
   screen.on('display-added', syncBoundsToDisplay)
@@ -158,6 +170,28 @@ app.whenReady().then(() => {
         const img = await settingsWindow?.webContents.capturePage()
         if (img) writeFileSync(`${prefix}-settings.png`, img.toPNG())
       }]
+    ]
+    for (const [t, fn] of stages) setTimeout(fn, t)
+  }
+
+  // Dev-only onboarding + proactive-brain walkthrough (with AIMI_TICK_NOW=1)
+  if (process.env.AIMI_DEMO_ONBOARD) {
+    const prefix = process.env.AIMI_DEMO_ONBOARD
+    const js = (code: string) => petWindow?.webContents.executeJavaScript(code).catch(console.error)
+    const shot = async (name: string) => {
+      const img = await petWindow?.webContents.capturePage()
+      if (img) writeFileSync(`${prefix}-${name}.png`, img.toPNG())
+    }
+    const stages: [number, () => void][] = [
+      [5000, () => shot('egg')],
+      [5500, () => js(`document.querySelector('.onboard-btn')?.click()`)],
+      [6200, () => shot('brain-step')],
+      [6500, () => js(`document.querySelector('.onboard-btn.ghost')?.click()`)],
+      [7200, () => shot('tips')],
+      [7500, () => js(`document.querySelector('.onboard-btn')?.click()`)],
+      [8500, () => shot('welcome')],
+      [22000, () => shot('brain-tick')],
+      [26000, () => shot('brain-tick2')]
     ]
     for (const [t, fn] of stages) setTimeout(fn, t)
   }

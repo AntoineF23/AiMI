@@ -2,9 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { GameState, Rarity, StickerDef } from '../../../shared/types'
 import { levelFromXp } from '../game/xp'
 import { rollDrop, XP_REWARDS, TREAT_ICONS } from '../game/rewards'
-import { sfx } from '../game/sound'
+import { setMuted, sfx } from '../game/sound'
 import type { PetEngine } from '../pet/engine'
 import type { ParticleSystem } from '../pet/particles'
+import { pushSessionAssistant } from '../ui/ChatPanel'
 
 export interface Anchor {
   x: number
@@ -65,7 +66,10 @@ export function useGame(
 
   // load once, save on every change
   useEffect(() => {
-    window.aimi.loadState().then(setState)
+    window.aimi.loadState().then((s) => {
+      setMuted(s.muted)
+      setState(s)
+    })
   }, [])
   useEffect(() => {
     if (state) window.aimi.saveState(state)
@@ -226,6 +230,55 @@ export function useGame(
     addXp(XP_REWARDS.talk())
   }, [addXp])
 
+  // settings-window relays + proactive brain bubbles
+  useEffect(() => {
+    const offRenamed = window.aimi.pet.onRenamed((name) => {
+      const s = stateRef.current
+      if (s) setState({ ...s, petName: name })
+    })
+    const offMuted = window.aimi.pet.onMuted((muted) => {
+      setMuted(muted)
+      const s = stateRef.current
+      if (s) setState({ ...s, muted })
+    })
+    const offBrain = window.aimi.onBrainSay((text) => {
+      pushSessionAssistant(text)
+      sfx.pop()
+      engineRef.current?.hold()
+      engineRef.current?.playAction('wave', 1.5)
+      setUi((u) => ({ ...u, bubble: { text, anchor: anchor() } }))
+      setTimeout(() => {
+        setUi((u) => (u.bubble?.text === text ? { ...u, bubble: null } : u))
+        engineRef.current?.release()
+      }, 15000)
+    })
+    return () => {
+      offRenamed()
+      offMuted()
+      offBrain()
+    }
+  }, [anchor, engineRef])
+
+  /** Clicking the pet's bubble opens the chat to answer — answering earns XP. */
+  const openChatFromBubble = useCallback(() => {
+    setUi((u) => ({ ...u, bubble: null, chat: anchor() }))
+    engineRef.current?.hold()
+  }, [anchor, engineRef])
+
+  const completeOnboarding = useCallback(
+    (name: string) => {
+      const s = stateRef.current
+      if (!s) return
+      setState({ ...s, petName: name || 'AiMI', onboardedAt: new Date().toISOString() })
+      sfx.levelUp()
+      const a = anchor()
+      particlesRef.current?.emitConfetti(a.x, a.y, 90)
+      engineRef.current?.celebrate()
+      pushToast(`WELCOME ${(name || 'AiMI').toUpperCase()}!`, a)
+    },
+    [anchor, engineRef, particlesRef, pushToast]
+  )
+
   const openAlbum = useCallback(() => {
     closeMenu()
     setUi((u) => ({ ...u, album: true }))
@@ -275,7 +328,7 @@ export function useGame(
   }, [engineRef])
 
   useEffect(() => {
-    if (!state) return
+    if (!state || !state.onboardedAt) return
     // daily gift (and first-ever welcome)
     if (state.lastDailyGift !== dayString()) {
       const t = setTimeout(() => spawnGift('daily'), 4000)
@@ -283,7 +336,7 @@ export function useGame(
     }
     return
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state === null])
+  }, [state === null, state?.onboardedAt])
 
   useEffect(() => {
     // surprise gifts: checked every minute, ~1/30 chance → avg every ~30 min
@@ -305,6 +358,8 @@ export function useGame(
       openChat,
       closeChat,
       chatMessageSent,
+      openChatFromBubble,
+      completeOnboarding,
       openAlbum,
       closeAlbum,
       openGift

@@ -8,6 +8,7 @@ import { RadialMenu } from './ui/RadialMenu'
 import { Album } from './ui/Album'
 import { Toasts, RewardPopup, LevelUpBanner, Bubble, GiftBox } from './ui/Overlays'
 import { ChatPanel } from './ui/ChatPanel'
+import { Onboarding } from './ui/Onboarding'
 import { levelFromXp } from './game/xp'
 
 export function PetApp() {
@@ -53,7 +54,7 @@ export function PetApp() {
         </div>
       )}
       <Toasts toasts={ui.toasts} />
-      {ui.bubble && <Bubble bubble={ui.bubble} />}
+      {ui.bubble && <Bubble bubble={ui.bubble} onClick={actions.openChatFromBubble} />}
       {ui.gift && <GiftBox x={ui.gift.x} onOpen={actions.openGift} />}
       {ui.menu && state && (
         <RadialMenu
@@ -81,6 +82,7 @@ export function PetApp() {
       {ui.popups.length > 0 && <RewardPopup popup={ui.popups[0]} />}
       {ui.levelUp && <LevelUpBanner level={ui.levelUp.level} coins={ui.levelUp.coins} />}
       {ui.album && state && <Album state={state} onClose={actions.closeAlbum} />}
+      {state && !state.onboardedAt && <Onboarding onDone={actions.completeOnboarding} />}
     </div>
   )
 }

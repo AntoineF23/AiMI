@@ -1,9 +1,30 @@
 import { useEffect, useMemo, useState } from 'react'
 import { PROVIDERS, type AiProvider, type AiSettingsPublic } from '../../../shared/ai'
+import { MemoryTab } from './MemoryTab'
+import { PetTab } from './PetTab'
 
 type TestResult = { ok: boolean; message: string } | null
+type Tab = 'brain' | 'memory' | 'pet'
 
 export function SettingsApp() {
+  const [tab, setTab] = useState<Tab>('brain')
+  return (
+    <div className="settings">
+      <nav className="tabs">
+        {(['brain', 'memory', 'pet'] as Tab[]).map((t) => (
+          <button key={t} className={`tab${tab === t ? ' active' : ''}`} onClick={() => setTab(t)}>
+            {t.toUpperCase()}
+          </button>
+        ))}
+      </nav>
+      {tab === 'brain' && <BrainTab />}
+      {tab === 'memory' && <MemoryTab />}
+      {tab === 'pet' && <PetTab />}
+    </div>
+  )
+}
+
+function BrainTab() {
   const [loaded, setLoaded] = useState<AiSettingsPublic | null>(null)
   const [provider, setProvider] = useState<AiProvider | null>(null)
   const [model, setModel] = useState('')
@@ -70,7 +91,7 @@ export function SettingsApp() {
   const canSave = !!provider && !!model && (!info?.needsKey || apiKey !== '' || loaded?.hasKey)
 
   return (
-    <div className="settings">
+    <div className="tab-body">
       <header>
         <h1>GIVE AIMI A BRAIN</h1>
         <p>

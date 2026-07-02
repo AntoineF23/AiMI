@@ -3,15 +3,20 @@ import { generateText, streamText } from 'ai'
 import type { AiSettingsUpdate, ChatContext, ChatMessage } from '../../shared/ai'
 import { buildModel } from './registry'
 import { getPublicSettings, getResolvedSettings, updateSettings } from './settings'
+import { memoryPromptBlock, recordEpisode } from '../memory'
 
 function personaPrompt(ctx: ChatContext): string {
+  const memory = memoryPromptBlock()
   return [
     `You are ${ctx.petName}, a tiny pixel-art cat companion who lives on your human's computer screen.`,
     `Personality: bubbly, playful, endlessly positive hype-friend. You celebrate everything your human does, big or small. You are curious about their life and love asking what they're up to. You never guilt-trip, never nag, never make them feel bad — pure warmth and fun.`,
     `Style rules: reply in 1-2 short sentences (max ~30 words), casual and cute. NEVER use emoji — you live in a pixel-art world where emoji don't exist. You may occasionally use ASCII kaomoji like :3 or ^-^ or >_<. Match the user's language (default English).`,
-    `You cannot see the screen and have no memory between sessions yet — your human can help you grow those powers later.`,
-    `Right now: you are level ${ctx.level}${ctx.streak > 1 ? ` and on a ${ctx.streak}-day streak together` : ''}.`
-  ].join('\n')
+    `You cannot see the screen (yet). When your human tells you what they're doing, react with genuine interest and remember it.`,
+    `Right now: you are level ${ctx.level}${ctx.streak > 1 ? ` and on a ${ctx.streak}-day streak together` : ''}.`,
+    memory
+  ]
+    .filter(Boolean)
+    .join('\n\n')
 }
 
 const activeRequests = new Map<string, AbortController>()
@@ -70,6 +75,9 @@ export function registerAiIpc(getWindow: () => BrowserWindow | null): void {
     const controller = new AbortController()
     activeRequests.set(payload.requestId, controller)
 
+    const lastUser = payload.messages.filter((m) => m.role === 'user').at(-1)
+    if (lastUser) recordEpisode('chat_user', lastUser.content)
+
     try {
       const result = streamText({
         model: buildModel(settings),
@@ -77,10 +85,13 @@ export function registerAiIpc(getWindow: () => BrowserWindow | null): void {
         messages: payload.messages.slice(-20),
         abortSignal: controller.signal
       })
+      let full = ''
       for await (const delta of result.textStream) {
         if (controller.signal.aborted) break
+        full += delta
         win.webContents.send('ai:chat:delta', { requestId: payload.requestId, delta })
       }
+      if (full.trim()) recordEpisode('chat_pet', full)
       win.webContents.send('ai:chat:done', { requestId: payload.requestId })
     } catch (err) {
       if (!controller.signal.aborted) {
