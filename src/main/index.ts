@@ -5,6 +5,7 @@ import { createTray } from './tray'
 import { registerStoreIpc } from './store'
 import { registerAiIpc } from './ai/chat'
 import { registerMemoryIpc } from './memory'
+import { registerCaptureIpc } from './capture'
 import { startBrain } from './brain'
 
 let petWindow: BrowserWindow | null = null
@@ -96,6 +97,7 @@ app.whenReady().then(() => {
   registerStoreIpc()
   registerAiIpc(() => petWindow)
   registerMemoryIpc()
+  registerCaptureIpc()
   petWindow = createPetWindow()
   startBrain(() => petWindow)
 
@@ -162,9 +164,11 @@ app.whenReady().then(() => {
       [7000, () => shot('menu')],
       [7500, () => js(clickBtn(3))], // talk → chat panel
       [8500, () => shot('chat-open')],
-      [9000, () => js(typeAndSend("Hi! I'm testing your brain. What are you?"))],
+      [9000, () => js(typeAndSend("I'm watching this: https://www.youtube.com/watch?v=dQw4w9WgXcQ"))],
       [12000, () => shot('chat-stream')],
-      [18000, () => shot('chat-done')],
+      [17000, () => shot('chat-done')],
+      [17500, () => js(`document.querySelector('.chat-peek')?.click()`)],
+      [18500, () => shot('peek')],
       [19000, () => openSettingsWindow()],
       [21000, async () => {
         const img = await settingsWindow?.webContents.capturePage()

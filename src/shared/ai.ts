@@ -6,6 +6,8 @@ export interface AiSettingsPublic {
   model: string
   baseUrl: string
   hasKey: boolean
+  allowScreenshots: boolean
+  shareActiveApp: boolean
 }
 
 export interface AiSettingsUpdate {

@@ -54,7 +54,14 @@ export function PetApp() {
         </div>
       )}
       <Toasts toasts={ui.toasts} />
-      {ui.bubble && <Bubble bubble={ui.bubble} onClick={actions.openChatFromBubble} />}
+      {ui.bubble && (
+        <Bubble
+          bubble={ui.bubble}
+          onClick={actions.openChatFromBubble}
+          onApprove={actions.approveScreenshot}
+          onDecline={actions.declineScreenshot}
+        />
+      )}
       {ui.gift && <GiftBox x={ui.gift.x} onOpen={actions.openGift} />}
       {ui.menu && state && (
         <RadialMenu
@@ -70,7 +77,8 @@ export function PetApp() {
       )}
       {ui.chat && state && (
         <ChatPanel
-          anchor={ui.chat}
+          anchor={ui.chat.anchor}
+          pendingScreenshot={ui.chat.screenshot}
           petName={state.petName}
           level={levelFromXp(state.totalXp)}
           streak={state.streak.count}

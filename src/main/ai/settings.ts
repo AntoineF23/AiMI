@@ -9,6 +9,8 @@ interface StoredAiSettings {
   baseUrl: string
   /** base64 of safeStorage-encrypted key */
   keyEnc: string
+  allowScreenshots?: boolean
+  shareActiveApp?: boolean
 }
 
 export interface ResolvedAiSettings {
@@ -48,7 +50,22 @@ function decryptKey(s: StoredAiSettings): string {
 
 export function getPublicSettings(): AiSettingsPublic {
   const s = load()
-  return { provider: s.provider, model: s.model, baseUrl: s.baseUrl, hasKey: !!s.keyEnc }
+  return {
+    provider: s.provider,
+    model: s.model,
+    baseUrl: s.baseUrl,
+    hasKey: !!s.keyEnc,
+    allowScreenshots: s.allowScreenshots ?? true,
+    shareActiveApp: s.shareActiveApp ?? false
+  }
+}
+
+export function updatePrefs(prefs: { allowScreenshots?: boolean; shareActiveApp?: boolean }): AiSettingsPublic {
+  const s = load()
+  if (prefs.allowScreenshots !== undefined) s.allowScreenshots = prefs.allowScreenshots
+  if (prefs.shareActiveApp !== undefined) s.shareActiveApp = prefs.shareActiveApp
+  persist()
+  return getPublicSettings()
 }
 
 export function updateSettings(update: AiSettingsUpdate): AiSettingsPublic {

@@ -4,11 +4,17 @@ export function PetTab() {
   const [name, setName] = useState('AiMI')
   const [muted, setMutedState] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [allowScreenshots, setAllowScreenshots] = useState(true)
+  const [shareActiveApp, setShareActiveApp] = useState(false)
 
   useEffect(() => {
     window.aimi.loadState().then((s) => {
       setName(s.petName)
       setMutedState(s.muted)
+    })
+    window.aimi.ai.getSettings().then((s) => {
+      setAllowScreenshots(s.allowScreenshots)
+      setShareActiveApp(s.shareActiveApp)
     })
   }, [])
 
@@ -49,6 +55,36 @@ export function PetTab() {
         >
           {muted ? 'SOUND: OFF — TURN ON' : 'SOUND: ON — TURN OFF'}
         </button>
+      </section>
+
+      <section>
+        <h2>PRIVACY</h2>
+        <div className="privacy-rows">
+          <button
+            className="ghost"
+            onClick={() => {
+              const next = !allowScreenshots
+              setAllowScreenshots(next)
+              window.aimi.ai.setPrefs({ allowScreenshots: next })
+            }}
+          >
+            {allowScreenshots ? 'SCREEN PEEKS: ALLOWED (ALWAYS ASKS FIRST)' : 'SCREEN PEEKS: DISABLED'}
+          </button>
+          <button
+            className="ghost"
+            onClick={() => {
+              const next = !shareActiveApp
+              setShareActiveApp(next)
+              window.aimi.ai.setPrefs({ shareActiveApp: next })
+            }}
+          >
+            {shareActiveApp ? 'SHARE ACTIVE APP NAME: ON' : 'SHARE ACTIVE APP NAME: OFF'}
+          </button>
+        </div>
+        <div className="hint">
+          PEEKS SEND ONE SCREENSHOT TO YOUR AI PROVIDER, ONLY WHEN YOU SAY YES, AND ARE NEVER SAVED. ACTIVE APP
+          SHARING LETS YOUR PET KNOW WHICH APP IS IN FRONT SO IT CAN CHEER YOU ON.
+        </div>
       </section>
     </div>
   )

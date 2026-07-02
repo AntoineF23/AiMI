@@ -132,6 +132,14 @@ button.danger:active {
   box-shadow: none;
 }
 
+.privacy-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
 header h1 {
   font-size: 14px;
   margin-bottom: 12px;

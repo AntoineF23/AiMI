@@ -31,12 +31,12 @@ export interface PopupItem {
 
 export interface UiState {
   menu: Anchor | null
-  bubble: { text: string; anchor: Anchor } | null
+  bubble: { text: string; anchor: Anchor; kind?: 'say' | 'ask_user' | 'ask_screenshot' } | null
   toasts: ToastItem[]
   popups: PopupItem[]
   levelUp: { level: number; coins: number } | null
   album: boolean
-  chat: Anchor | null
+  chat: { anchor: Anchor; screenshot?: string } | null
   gift: { kind: 'daily' | 'surprise'; x: number } | null
 }
 
@@ -218,7 +218,7 @@ export function useGame(
     closeMenu()
     engineRef.current?.hold()
     engineRef.current?.playAction('wave', 1.5)
-    setUi((u) => ({ ...u, chat: anchor() }))
+    setUi((u) => ({ ...u, chat: { anchor: anchor() } }))
   }, [anchor, closeMenu, engineRef])
 
   const closeChat = useCallback(() => {
@@ -241,16 +241,16 @@ export function useGame(
       const s = stateRef.current
       if (s) setState({ ...s, muted })
     })
-    const offBrain = window.aimi.onBrainSay((text) => {
+    const offBrain = window.aimi.onBrainSay((text, kind) => {
       pushSessionAssistant(text)
       sfx.pop()
       engineRef.current?.hold()
-      engineRef.current?.playAction('wave', 1.5)
-      setUi((u) => ({ ...u, bubble: { text, anchor: anchor() } }))
+      engineRef.current?.playAction(kind === 'ask_screenshot' ? 'think' : 'wave', 1.5)
+      setUi((u) => ({ ...u, bubble: { text, anchor: anchor(), kind } }))
       setTimeout(() => {
         setUi((u) => (u.bubble?.text === text ? { ...u, bubble: null } : u))
         engineRef.current?.release()
-      }, 15000)
+      }, kind === 'ask_screenshot' ? 25000 : 15000)
     })
     return () => {
       offRenamed()
@@ -261,9 +261,33 @@ export function useGame(
 
   /** Clicking the pet's bubble opens the chat to answer — answering earns XP. */
   const openChatFromBubble = useCallback(() => {
-    setUi((u) => ({ ...u, bubble: null, chat: anchor() }))
+    setUi((u) => ({ ...u, bubble: null, chat: { anchor: anchor() } }))
     engineRef.current?.hold()
   }, [anchor, engineRef])
+
+  /** User said yes to a screen peek: capture and hand it to the chat. */
+  const approveScreenshot = useCallback(async () => {
+    setUi((u) => ({ ...u, bubble: null }))
+    const result = await window.aimi.capture()
+    if (result.ok) {
+      sfx.pop()
+      setUi((u) => ({ ...u, chat: { anchor: anchor(), screenshot: result.dataUrl } }))
+      engineRef.current?.hold()
+    } else {
+      pushSessionAssistant(
+        result.reason === 'denied'
+          ? 'macOS is blocking my eyes! System Settings > Privacy > Screen Recording, then let me in. :3'
+          : "Hmm, the peek didn't work. Maybe macOS needs you to allow Screen Recording first?"
+      )
+      setUi((u) => ({ ...u, chat: { anchor: anchor() } }))
+      engineRef.current?.hold()
+    }
+  }, [anchor, engineRef])
+
+  const declineScreenshot = useCallback(() => {
+    setUi((u) => ({ ...u, bubble: null }))
+    engineRef.current?.release()
+  }, [engineRef])
 
   const completeOnboarding = useCallback(
     (name: string) => {
@@ -359,6 +383,8 @@ export function useGame(
       closeChat,
       chatMessageSent,
       openChatFromBubble,
+      approveScreenshot,
+      declineScreenshot,
       completeOnboarding,
       openAlbum,
       closeAlbum,

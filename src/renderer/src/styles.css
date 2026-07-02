@@ -404,6 +404,44 @@ img.px {
   align-items: center;
   justify-content: center;
   box-shadow: 2px 2px 0 rgba(20, 12, 40, 0.5);
+  flex-shrink: 0;
+}
+
+.chat-input-row .chat-peek {
+  background: var(--panel-2);
+  border-color: var(--border);
+}
+
+.chat-input-row .chat-peek:hover {
+  background: var(--accent-2);
+}
+
+.bubble-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  justify-content: center;
+}
+
+.bubble-btn {
+  padding: 8px 10px;
+  font-size: 7px;
+  font-family: inherit;
+  cursor: pointer;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 2px 2px 0 rgba(20, 12, 40, 0.4);
+}
+
+.bubble-btn.yes {
+  background: var(--accent-2);
+  color: #fff;
+}
+
+.bubble-btn:active {
+  translate: 1px 1px;
+  box-shadow: none;
 }
 
 .chat-input-row button:active {

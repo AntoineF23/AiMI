@@ -570,6 +570,40 @@ oYYYYYoYYoYYOOo
 ....oWo
 ....oo`)
   },
+  camera: {
+    palette: { G: '#9aa3b2', D: '#6b7280', B: '#67e8f9', K: '#241a3d' },
+    rows: grid(`
+.
+.
+..oo
+.oGGooooo
+.oGGGGGGGoooo
+.oGGGGGGGGGGGo
+.oGGooGGGGGGGo
+.oGoBBoGGGGGGo
+.oGoBBoGGGGDGo
+.oGGooGGGGGDGo
+.oGGGGGGGGDDGo
+.oGGGGGGGDDGGo
+.ooooooooooooo`)
+  },
+  eye: {
+    palette: { W: '#f4f4f8', B: '#67e8f9', K: '#241a3d' },
+    rows: grid(`
+.
+.
+.
+....ooooo
+..ooWWWWWoo
+.oWWWooWWWWo
+oWWWoKKoBWWWo
+oWWoKKKKoBWWWo
+oWWoKWKKoBWWWo
+oWWWoKKoBWWWo
+.oWWWooWWWWo
+..ooWWWWWoo
+....ooooo`)
+  },
   egg: {
     palette: { W: '#f4f4f8', P: '#ff9ecf', S: '#e2e2ec' },
     rows: grid(`

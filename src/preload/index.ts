@@ -51,10 +51,14 @@ const api = {
       return () => ipcRenderer.removeListener('pet:muted', listener)
     }
   },
-  onBrainSay(cb: (text: string, isQuestion: boolean) => void): () => void {
-    const listener = (_e: unknown, p: { text: string; isQuestion: boolean }) => cb(p.text, p.isQuestion)
+  onBrainSay(cb: (text: string, kind: 'say' | 'ask_user' | 'ask_screenshot') => void): () => void {
+    const listener = (_e: unknown, p: { text: string; kind: 'say' | 'ask_user' | 'ask_screenshot' }) =>
+      cb(p.text, p.kind)
     ipcRenderer.on('brain:say', listener)
     return () => ipcRenderer.removeListener('brain:say', listener)
+  },
+  capture(): Promise<{ ok: true; dataUrl: string } | { ok: false; reason: 'denied' | 'failed' }> {
+    return ipcRenderer.invoke('capture:take')
   },
   ai: {
     getSettings(): Promise<AiSettingsPublic> {
@@ -69,8 +73,11 @@ const api = {
     listOllamaModels(baseUrl: string): Promise<string[] | null> {
       return ipcRenderer.invoke('ai:ollama:models', baseUrl)
     },
-    chat(requestId: string, messages: ChatMessage[], context: ChatContext): void {
-      ipcRenderer.send('ai:chat', { requestId, messages, context })
+    chat(requestId: string, messages: ChatMessage[], context: ChatContext, screenshot?: string): void {
+      ipcRenderer.send('ai:chat', { requestId, messages, context, screenshot })
+    },
+    setPrefs(prefs: { allowScreenshots?: boolean; shareActiveApp?: boolean }): Promise<AiSettingsPublic> {
+      return ipcRenderer.invoke('ai:prefs:set', prefs)
     },
     cancel(requestId: string): void {
       ipcRenderer.send('ai:chat:cancel', requestId)

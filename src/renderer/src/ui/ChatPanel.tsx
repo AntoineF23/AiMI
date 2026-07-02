@@ -24,6 +24,7 @@ export function pushSessionAssistant(text: string): void {
 
 interface Props {
   anchor: Anchor
+  pendingScreenshot?: string
   petName: string
   level: number
   streak: number
@@ -32,12 +33,13 @@ interface Props {
   onClose: () => void
 }
 
-export function ChatPanel({ anchor, petName, level, streak, engine, onUserMessage, onClose }: Props) {
+export function ChatPanel({ anchor, pendingScreenshot, petName, level, streak, engine, onUserMessage, onClose }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>(sessionMessages)
   const [input, setInput] = useState('')
   const [draft, setDraft] = useState<string | null>(null) // streaming assistant text
   const [configured, setConfigured] = useState<boolean | null>(null)
   const requestRef = useRef<string | null>(null)
+  const hadImageRef = useRef(false)
   const listRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -71,6 +73,8 @@ export function ChatPanel({ anchor, petName, level, streak, engine, onUserMessag
         let text = finalDraft ?? ''
         if (error === 'not-configured') {
           text = "I don't have a brain yet! Open Setup and plug one in — Ollama is free! :3"
+        } else if (error && hadImageRef.current) {
+          text = "I tried SO hard to see it, but this model has no eyes (no vision support). Pick a vision-capable model in Setup and I'll peek! >_<"
         } else if (error) {
           text = `My brain fizzled (${error.slice(0, 80)}...). Maybe check Setup? >_<`
         }
@@ -102,7 +106,7 @@ export function ChatPanel({ anchor, petName, level, streak, engine, onUserMessag
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  const send = (text: string): void => {
+  const send = (text: string, screenshot?: string): void => {
     const content = text.trim()
     if (!content || requestRef.current) return
     sessionMessages = [...sessionMessages, { role: 'user', content }]
@@ -111,9 +115,40 @@ export function ChatPanel({ anchor, petName, level, streak, engine, onUserMessag
     onUserMessage()
     const id = crypto.randomUUID()
     requestRef.current = id
+    hadImageRef.current = !!screenshot
     setDraft('')
     engine?.playAction('think', 30)
-    window.aimi.ai.chat(id, sessionMessages, { petName, level, streak })
+    window.aimi.ai.chat(id, sessionMessages, { petName, level, streak }, screenshot)
+  }
+
+  // brain asked to peek and the user said yes — auto-send the capture
+  const sentPendingRef = useRef(false)
+  useEffect(() => {
+    if (pendingScreenshot && !sentPendingRef.current) {
+      sentPendingRef.current = true
+      send('*shows you my screen*', pendingScreenshot)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingScreenshot])
+
+  const peek = async (): Promise<void> => {
+    if (requestRef.current) return
+    const result = await window.aimi.capture()
+    if (result.ok) {
+      send('*shows you my screen*', result.dataUrl)
+    } else {
+      sessionMessages = [
+        ...sessionMessages,
+        {
+          role: 'assistant',
+          content:
+            result.reason === 'denied'
+              ? 'macOS is blocking my eyes! System Settings > Privacy & Security > Screen Recording, then let me in. :3'
+              : "The peek didn't work — macOS may need you to allow Screen Recording first."
+        }
+      ]
+      setMessages(sessionMessages)
+    }
   }
 
   const x = Math.min(window.innerWidth - 180, Math.max(180, anchor.x))
@@ -157,6 +192,15 @@ export function ChatPanel({ anchor, petName, level, streak, engine, onUserMessag
           send(input)
         }}
       >
+        <button
+          type="button"
+          className="chat-peek"
+          title={`Let ${petName} peek at your screen`}
+          onClick={peek}
+          disabled={draft !== null}
+        >
+          <Px name="camera" size={16} />
+        </button>
         <input
           ref={inputRef}
           value={input}

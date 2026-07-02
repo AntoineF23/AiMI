@@ -2,10 +2,11 @@ import { powerMonitor, type BrowserWindow } from 'electron'
 import { generateText } from 'ai'
 import { z } from 'zod'
 import { readFileSync } from 'node:fs'
+import { execFile } from 'node:child_process'
 import { join } from 'node:path'
 import { app } from 'electron'
 import { buildModel } from '../ai/registry'
-import { getResolvedSettings } from '../ai/settings'
+import { getPublicSettings, getResolvedSettings } from '../ai/settings'
 import {
   addFact,
   getKv,
@@ -22,10 +23,23 @@ const IDLE_SKIP_SECONDS = 6 * 60
 const CONSOLIDATE_THRESHOLD = 30
 
 const actionSchema = z.object({
-  action: z.enum(['say', 'ask_user', 'idle']),
+  action: z.enum(['say', 'ask_user', 'ask_screenshot', 'idle']),
   text: z.string().max(400).optional().default(''),
   learn: z.array(z.string().max(300)).max(3).optional().default([])
 })
+
+/** Frontmost app name via lsappinfo — no TCC permission needed (macOS only). */
+function frontAppName(): Promise<string | null> {
+  return new Promise((resolve) => {
+    execFile('lsappinfo', ['front'], { timeout: 1500 }, (err, asn) => {
+      if (err || !asn.trim()) return resolve(null)
+      execFile('lsappinfo', ['info', '-only', 'name', asn.trim()], { timeout: 1500 }, (err2, out) => {
+        if (err2) return resolve(null)
+        resolve(/"?name"?\s*=\s*"([^"]+)"/.exec(out)?.[1] ?? null)
+      })
+    })
+  })
+}
 
 function isNight(): boolean {
   const h = new Date().getHours()
@@ -60,14 +74,23 @@ async function think(win: BrowserWindow): Promise<void> {
   const snap = gameStateSnapshot()
   const memory = memoryPromptBlock()
   const hour = new Date().getHours()
+  const prefs = getPublicSettings()
+  const frontApp = prefs.shareActiveApp ? await frontAppName() : null
+
+  const actions = prefs.allowScreenshots
+    ? `"say" | "ask_user" | "ask_screenshot" | "idle"`
+    : `"say" | "ask_user" | "idle"`
 
   const prompt = [
     `You are the inner voice of ${snap.petName}, a tiny pixel cat companion on your human's screen (level ${snap.level}${snap.streak > 1 ? `, ${snap.streak}-day streak` : ''}). Local time hour: ${hour}.`,
+    frontApp ? `Your human's frontmost app right now: ${frontApp}.` : '',
     memory || 'You know almost nothing about your human yet — be curious!',
-    `Decide ONE small thing to do right now. Rules: be a warm, playful hype-friend; never guilt-trip or nag; keep text under 25 words; no emoji (ASCII kaomoji like :3 are ok). If you spoke recently or have nothing good, choose idle. Asking what they're doing is great — you learn about them.`,
+    `Decide ONE small thing to do right now. Rules: be a warm, playful hype-friend; never guilt-trip or nag; keep text under 25 words; no emoji (ASCII kaomoji like :3 are ok). If you spoke recently or have nothing good, choose idle. Asking what they're doing is great — you learn about them.${prefs.allowScreenshots ? ' ask_screenshot politely asks to peek at their screen — use it rarely, only when curious.' : ''}`,
     `Reply with ONLY a JSON object, no markdown fences:`,
-    `{"action": "say" | "ask_user" | "idle", "text": "what you say (empty for idle)", "learn": []}`
-  ].join('\n\n')
+    `{"action": ${actions}, "text": "what you say (empty for idle)", "learn": []}`
+  ]
+    .filter(Boolean)
+    .join('\n\n')
 
   try {
     const result = await generateText({
@@ -79,7 +102,10 @@ async function think(win: BrowserWindow): Promise<void> {
     for (const fact of parsed.learn) addFact(fact, 'misc', 'brain')
     if (parsed.action !== 'idle' && parsed.text.trim()) {
       recordEpisode('chat_pet', parsed.text)
-      win.webContents.send('brain:say', { text: parsed.text.trim(), isQuestion: parsed.action === 'ask_user' })
+      win.webContents.send('brain:say', {
+        text: parsed.text.trim(),
+        kind: parsed.action === 'ask_screenshot' && prefs.allowScreenshots ? 'ask_screenshot' : parsed.action
+      })
     }
   } catch (err) {
     console.error('brain tick failed:', err instanceof Error ? err.message : err)

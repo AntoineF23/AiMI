@@ -48,12 +48,38 @@ export function LevelUpBanner({ level, coins }: { level: number; coins: number }
   )
 }
 
-export function Bubble({ bubble, onClick }: { bubble: NonNullable<UiState['bubble']>; onClick?: () => void }) {
+export function Bubble({
+  bubble,
+  onClick,
+  onApprove,
+  onDecline
+}: {
+  bubble: NonNullable<UiState['bubble']>
+  onClick?: () => void
+  onApprove?: () => void
+  onDecline?: () => void
+}) {
   const x = Math.min(window.innerWidth - 140, Math.max(140, bubble.anchor.x))
+  const isAsk = bubble.kind === 'ask_screenshot'
   return (
-    <div className="bubble hit" style={{ left: x, top: bubble.anchor.y - 26 }} onClick={onClick}>
+    <div
+      className="bubble hit"
+      style={{ left: x, top: bubble.anchor.y - 26 }}
+      onClick={isAsk ? undefined : onClick}
+    >
       {bubble.text}
-      {onClick && <div className="bubble-cta">CLICK TO ANSWER</div>}
+      {isAsk ? (
+        <div className="bubble-actions">
+          <button className="bubble-btn yes" onClick={onApprove}>
+            SURE, PEEK
+          </button>
+          <button className="bubble-btn" onClick={onDecline}>
+            NOT NOW
+          </button>
+        </div>
+      ) : (
+        onClick && <div className="bubble-cta">CLICK TO ANSWER</div>
+      )}
       <div className="bubble-tail" />
     </div>
   )
