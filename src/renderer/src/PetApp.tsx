@@ -7,6 +7,8 @@ import { useGame } from './hooks/useGame'
 import { RadialMenu } from './ui/RadialMenu'
 import { Album } from './ui/Album'
 import { Toasts, RewardPopup, LevelUpBanner, Bubble, GiftBox } from './ui/Overlays'
+import { ChatPanel } from './ui/ChatPanel'
+import { levelFromXp } from './game/xp'
 
 export function PetApp() {
   const petRef = useRef<HTMLDivElement>(null)
@@ -60,9 +62,20 @@ export function PetApp() {
           onTreat={actions.feedTreat}
           onPet={actions.petPet}
           onPlay={actions.playTogether}
-          onTalk={actions.talkTo}
+          onTalk={actions.openChat}
           onAlbum={actions.openAlbum}
           onClose={actions.closeMenu}
+        />
+      )}
+      {ui.chat && state && (
+        <ChatPanel
+          anchor={ui.chat}
+          petName={state.petName}
+          level={levelFromXp(state.totalXp)}
+          streak={state.streak.count}
+          engine={engineRef.current}
+          onUserMessage={actions.chatMessageSent}
+          onClose={actions.closeChat}
         />
       )}
       {ui.popups.length > 0 && <RewardPopup popup={ui.popups[0]} />}

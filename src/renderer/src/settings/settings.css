@@ -1,0 +1,236 @@
+/* AiMI settings — same pixel-art system as the pet window. */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --ink: #241a3d;
+  --panel: #2a2046;
+  --panel-2: #362a5c;
+  --border: #4a3a78;
+  --accent: #a78bfa;
+  --accent-2: #8a68f5;
+  --gold: #ffd75e;
+}
+
+body {
+  background: var(--ink);
+  color: #fff;
+  font-family: 'Press Start 2P', monospace;
+  -webkit-font-smoothing: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.settings {
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+header h1 {
+  font-size: 14px;
+  margin-bottom: 12px;
+  color: var(--gold);
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
+}
+
+header p {
+  font-size: 7px;
+  line-height: 1.9;
+  opacity: 0.8;
+}
+
+h2 {
+  font-size: 8px;
+  opacity: 0.8;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge {
+  background: #4ade80;
+  color: var(--ink);
+  font-size: 6px;
+  padding: 3px 6px;
+  border: 2px solid var(--ink);
+}
+
+.provider-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.provider-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 4px;
+  border: 3px solid var(--border);
+  background: var(--panel);
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.provider-card:hover {
+  background: var(--panel-2);
+}
+
+.provider-card.active {
+  border-color: var(--accent);
+  background: var(--panel-2);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.4);
+}
+
+.provider-swatch {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--ink);
+  image-rendering: pixelated;
+}
+
+.provider-label {
+  font-size: 6px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.hint {
+  margin-top: 10px;
+  font-size: 6.5px;
+  opacity: 0.6;
+  line-height: 1.6;
+}
+
+input[type='text'],
+input[type='password'] {
+  width: 100%;
+  padding: 10px 10px;
+  border: 2px solid var(--border);
+  background: var(--panel);
+  color: #fff;
+  font-size: 8px;
+  font-family: inherit;
+  outline: none;
+}
+
+input:focus {
+  border-color: var(--accent);
+}
+
+.key-row {
+  display: flex;
+  gap: 8px;
+}
+
+.key-row input {
+  flex: 1;
+}
+
+.model-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.chip {
+  padding: 8px 10px;
+  border: 2px solid var(--border);
+  background: var(--panel);
+  color: #fff;
+  font-size: 6.5px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.chip:hover {
+  background: var(--panel-2);
+}
+
+.chip.active {
+  border-color: var(--accent);
+  background: var(--accent-2);
+}
+
+.warn {
+  font-size: 6.5px;
+  color: var(--gold);
+  margin-bottom: 10px;
+  line-height: 1.7;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+button.primary,
+button.ghost {
+  padding: 11px 16px;
+  font-size: 8px;
+  font-family: inherit;
+  cursor: pointer;
+  border: 3px solid var(--ink);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.4);
+}
+
+button.primary {
+  background: var(--accent-2);
+  color: #fff;
+}
+
+button.ghost {
+  background: var(--panel);
+  border-color: var(--border);
+  color: #fff;
+}
+
+button.primary:active,
+button.ghost:active {
+  translate: 2px 2px;
+  box-shadow: none;
+}
+
+button.primary:disabled,
+button.ghost:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.test-ok,
+.test-fail {
+  font-size: 7px;
+  padding: 12px;
+  border: 2px solid;
+  line-height: 1.7;
+}
+
+.test-ok {
+  border-color: #4ade80;
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.08);
+}
+
+.test-fail {
+  border-color: #ff8fb8;
+  color: #ff8fb8;
+  background: rgba(255, 92, 138, 0.08);
+}
+
+footer {
+  font-size: 6px;
+  opacity: 0.55;
+  text-align: center;
+  line-height: 1.8;
+}

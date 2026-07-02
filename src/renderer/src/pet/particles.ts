@@ -22,8 +22,12 @@ export class ParticleSystem {
   private ctx: CanvasRenderingContext2D
   private dpr = window.devicePixelRatio || 1
 
+  private zzzImg: HTMLImageElement
+
   constructor(private canvas: HTMLCanvasElement) {
     this.ctx = canvas.getContext('2d')!
+    this.zzzImg = new Image()
+    this.zzzImg.src = './px/zzz.png'
     this.resize()
     window.addEventListener('resize', () => this.resize())
   }
@@ -136,9 +140,9 @@ export class ParticleSystem {
           }
         }
       } else if (p.kind === 'zzz') {
-        ctx.fillStyle = '#8a68f5'
-        ctx.font = `bold ${Math.round(p.size)}px monospace`
-        ctx.fillText('z', p.x, p.y)
+        const s = p.size / 8
+        ctx.imageSmoothingEnabled = false
+        ctx.drawImage(this.zzzImg, p.x, p.y, 16 * s, 16 * s)
       } else if (p.kind === 'confetti') {
         ctx.save()
         ctx.translate(p.x, p.y)

@@ -1,6 +1,7 @@
 import type { Anchor } from '../hooks/useGame'
 import type { GameState } from '../../../shared/types'
 import { levelProgress } from '../game/xp'
+import { Px } from './Px'
 
 interface Props {
   anchor: Anchor
@@ -13,12 +14,13 @@ interface Props {
   onClose: () => void
 }
 
-const ITEMS: { key: string; emoji: string; label: string; angle: number }[] = [
-  { key: 'treat', emoji: '🍎', label: 'Treat', angle: -162 },
-  { key: 'pet', emoji: '❤️', label: 'Pet', angle: -126 },
-  { key: 'play', emoji: '🎮', label: 'Play', angle: -90 },
-  { key: 'talk', emoji: '💬', label: 'Talk', angle: -54 },
-  { key: 'album', emoji: '📖', label: 'Album', angle: -18 }
+const ITEMS: { key: string; icon: string; label: string; angle: number }[] = [
+  { key: 'treat', icon: 'apple', label: 'TREAT', angle: -170 },
+  { key: 'pet', icon: 'heart', label: 'PET', angle: -138 },
+  { key: 'play', icon: 'gamepad', label: 'PLAY', angle: -106 },
+  { key: 'talk', icon: 'bubble', label: 'TALK', angle: -74 },
+  { key: 'album', icon: 'book', label: 'ALBUM', angle: -42 },
+  { key: 'settings', icon: 'gear', label: 'SETUP', angle: -10 }
 ]
 
 export function RadialMenu({ anchor, state, onTreat, onPet, onPlay, onTalk, onAlbum, onClose }: Props) {
@@ -27,10 +29,14 @@ export function RadialMenu({ anchor, state, onTreat, onPet, onPlay, onTalk, onAl
     pet: onPet,
     play: onPlay,
     talk: onTalk,
-    album: onAlbum
+    album: onAlbum,
+    settings: () => {
+      window.aimi.openSettings()
+      onClose()
+    }
   }
-  const radius = 86
-  const cx = Math.min(window.innerWidth - radius - 40, Math.max(radius + 40, anchor.x))
+  const radius = 106
+  const cx = Math.min(window.innerWidth - radius - 48, Math.max(radius + 48, anchor.x))
   const cy = anchor.y + 30
   const prog = levelProgress(state.totalXp)
 
@@ -48,18 +54,24 @@ export function RadialMenu({ anchor, state, onTreat, onPet, onPlay, onTalk, onAl
             style={{ transform: `translate(${x}px, ${y}px)` }}
             onClick={handlers[item.key]}
           >
-            <span className="radial-emoji">{item.emoji}</span>
+            <Px name={item.icon} size={16} />
             <span className="radial-label">{item.label}</span>
           </button>
         )
       })}
-      <div className="hud-pill" style={{ transform: `translate(-50%, ${-radius - 74}px)` }}>
-        <span className="hud-level">Lv {prog.level}</span>
+      <div className="hud-pill" style={{ transform: `translate(-50%, ${-radius - 78}px)` }}>
+        <span className="hud-level">LV{prog.level}</span>
         <span className="hud-bar">
           <span className="hud-bar-fill" style={{ width: `${Math.round(prog.ratio * 100)}%` }} />
         </span>
-        <span>🪙 {state.coins}</span>
-        {state.streak.count > 1 && <span>🔥 {state.streak.count}</span>}
+        <Px name="coin" size={16} />
+        <span>{state.coins}</span>
+        {state.streak.count > 1 && (
+          <>
+            <Px name="star" size={16} />
+            <span>{state.streak.count}</span>
+          </>
+        )}
       </div>
     </div>
   )

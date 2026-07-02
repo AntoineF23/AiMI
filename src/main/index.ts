@@ -3,8 +3,39 @@ import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { createTray } from './tray'
 import { registerStoreIpc } from './store'
+import { registerAiIpc } from './ai/chat'
 
 let petWindow: BrowserWindow | null = null
+let settingsWindow: BrowserWindow | null = null
+
+function openSettingsWindow(): void {
+  if (settingsWindow && !settingsWindow.isDestroyed()) {
+    settingsWindow.show()
+    settingsWindow.focus()
+    return
+  }
+  settingsWindow = new BrowserWindow({
+    width: 520,
+    height: 680,
+    title: 'AiMI Settings',
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    show: false,
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: false
+    }
+  })
+  settingsWindow.once('ready-to-show', () => settingsWindow?.show())
+  settingsWindow.on('closed', () => (settingsWindow = null))
+  if (process.env['ELECTRON_RENDERER_URL']) {
+    settingsWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/settings.html`)
+  } else {
+    settingsWindow.loadFile(join(__dirname, '../renderer/settings.html'))
+  }
+}
 
 function petWindowBounds() {
   const { workArea } = screen.getPrimaryDisplay()
@@ -61,6 +92,7 @@ app.whenReady().then(() => {
   app.dock?.hide()
 
   registerStoreIpc()
+  registerAiIpc(() => petWindow)
   petWindow = createPetWindow()
 
   createTray({
@@ -69,8 +101,11 @@ app.whenReady().then(() => {
       if (petWindow.isVisible()) petWindow.hide()
       else petWindow.showInactive()
     },
-    isVisible: () => petWindow?.isVisible() ?? false
+    isVisible: () => petWindow?.isVisible() ?? false,
+    onOpenSettings: openSettingsWindow
   })
+
+  ipcMain.on('open-settings', openSettingsWindow)
 
   screen.on('display-metrics-changed', syncBoundsToDisplay)
   screen.on('display-added', syncBoundsToDisplay)
@@ -103,19 +138,26 @@ app.whenReady().then(() => {
       pet.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1 }))
     })()`
     const clickBtn = (i: number) => `document.querySelectorAll('.radial-btn')[${i}]?.click()`
+    const typeAndSend = (text: string) => `(() => {
+      const input = document.querySelector('.chat-input-row input')
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
+      setter.call(input, ${JSON.stringify(text)})
+      input.dispatchEvent(new Event('input', { bubbles: true }))
+      document.querySelector('form.chat-input-row').requestSubmit()
+    })()`
     const stages: [number, () => void][] = [
       [6000, () => js(clickPet)],
       [7000, () => shot('menu')],
-      [7500, () => js(clickBtn(0))], // treat
-      [8300, () => shot('eat')],
-      [9600, () => shot('drop')],
-      [11500, () => js(clickPet)],
-      [12000, () => js(clickBtn(4))], // album
-      [12800, () => shot('album')],
-      [13200, () => js(`document.querySelector('.album-close')?.click()`)],
-      [13500, () => js(clickPet)],
-      [14000, () => js(clickBtn(3))], // talk
-      [14800, () => shot('talk')]
+      [7500, () => js(clickBtn(3))], // talk → chat panel
+      [8500, () => shot('chat-open')],
+      [9000, () => js(typeAndSend("Hi! I'm testing your brain. What are you?"))],
+      [12000, () => shot('chat-stream')],
+      [18000, () => shot('chat-done')],
+      [19000, () => openSettingsWindow()],
+      [21000, async () => {
+        const img = await settingsWindow?.webContents.capturePage()
+        if (img) writeFileSync(`${prefix}-settings.png`, img.toPNG())
+      }]
     ]
     for (const [t, fn] of stages) setTimeout(fn, t)
   }

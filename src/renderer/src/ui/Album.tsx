@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import type { GameState } from '../../../shared/types'
 import { STICKERS, RARITY_COLORS } from '../game/rewards'
+import { Px } from './Px'
 
 export function Album({ state, onClose }: { state: GameState; onClose: () => void }) {
   useEffect(() => {
@@ -16,13 +17,16 @@ export function Album({ state, onClose }: { state: GameState; onClose: () => voi
   return (
     <div className="album hit">
       <div className="album-header">
-        <span className="album-title">📖 Sticker Album</span>
+        <Px name="book" size={16} />
+        <span className="album-title">STICKER ALBUM</span>
         <span className="album-count">
           {owned.size}/{STICKERS.length}
         </span>
-        <span className="album-coins">🪙 {state.coins}</span>
+        <span className="album-coins">
+          <Px name="coin" size={16} /> {state.coins}
+        </span>
         <button className="album-close" onClick={onClose}>
-          ✕
+          <Px name="xmark" size={16} />
         </button>
       </div>
       <div className="album-grid">
@@ -35,13 +39,13 @@ export function Album({ state, onClose }: { state: GameState; onClose: () => voi
               style={has ? { borderColor: RARITY_COLORS[s.rarity] } : undefined}
               title={has ? s.name : '???'}
             >
-              <span className="album-emoji">{has ? s.emoji : '❓'}</span>
+              <Px name={has ? s.id : 'question'} size={32} />
               <span className="album-name">{has ? s.name : '???'}</span>
             </div>
           )
         })}
       </div>
-      <div className="album-footer">Collect them all! Rarer stickers drop from gifts &amp; treats ✨</div>
+      <div className="album-footer">COLLECT THEM ALL! RARER STICKERS DROP FROM GIFTS &amp; TREATS</div>
     </div>
   )
 }

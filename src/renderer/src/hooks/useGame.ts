@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { GameState, Rarity, StickerDef } from '../../../shared/types'
 import { levelFromXp } from '../game/xp'
-import { rollDrop, XP_REWARDS, TREAT_EMOJIS } from '../game/rewards'
+import { rollDrop, XP_REWARDS, TREAT_ICONS } from '../game/rewards'
 import { sfx } from '../game/sound'
 import type { PetEngine } from '../pet/engine'
 import type { ParticleSystem } from '../pet/particles'
@@ -14,13 +14,14 @@ export interface Anchor {
 export interface ToastItem {
   id: number
   text: string
+  icon?: string
   x: number
   y: number
 }
 
 export interface PopupItem {
   id: number
-  emoji: string
+  icon: string
   title: string
   subtitle: string
   rarity: Rarity
@@ -34,18 +35,9 @@ export interface UiState {
   popups: PopupItem[]
   levelUp: { level: number; coins: number } | null
   album: boolean
+  chat: Anchor | null
   gift: { kind: 'daily' | 'surprise'; x: number } | null
 }
-
-const TALK_LINES = [
-  "Hi! I'm AiMI! 💜",
-  "Whatcha working on? I bet it's something cool!",
-  "Soon I'll get a real brain and we can actually chat!",
-  'I found a dust bunny behind your dock. We are friends now.',
-  'You + me = dream team 🐾',
-  "Don't tell anyone, but you're my favorite human.",
-  'I practiced my zoomies today. Personal best!'
-]
 
 const dayString = (d = new Date()) => d.toISOString().slice(0, 10)
 
@@ -63,6 +55,7 @@ export function useGame(
     popups: [],
     levelUp: null,
     album: false,
+    chat: null,
     gift: null
   })
   const stateRef = useRef(state)
@@ -83,9 +76,9 @@ export function useGame(
     return e ? { x: e.centerX, y: e.y } : { x: window.innerWidth / 2, y: window.innerHeight - 100 }
   }, [engineRef])
 
-  const pushToast = useCallback((text: string, at?: Anchor) => {
+  const pushToast = useCallback((text: string, at?: Anchor, icon?: string) => {
     const a = at ?? anchor()
-    const item: ToastItem = { id: idCounter++, text, x: a.x, y: a.y - 20 }
+    const item: ToastItem = { id: idCounter++, text, icon, x: a.x, y: a.y - 20 }
     setUi((u) => ({ ...u, toasts: [...u.toasts, item] }))
     setTimeout(() => setUi((u) => ({ ...u, toasts: u.toasts.filter((t) => t.id !== item.id) })), 1400)
   }, [anchor])
@@ -141,9 +134,9 @@ export function useGame(
             particlesRef.current?.emitConfetti(a.x, a.y - 30, drop.sticker.rarity === 'legendary' ? 80 : 30)
           }
           pushPopup({
-            emoji: drop.sticker.emoji,
+            icon: drop.sticker.id,
             title: drop.sticker.name,
-            subtitle: 'New sticker for your album!',
+            subtitle: 'NEW STICKER FOR YOUR ALBUM!',
             rarity: drop.sticker.rarity,
             isNew: true
           })
@@ -151,9 +144,9 @@ export function useGame(
         } else if (drop.kind === 'coins' && drop.coins) {
           sfx.reward(drop.sticker ? drop.sticker.rarity : 'common')
           pushPopup({
-            emoji: '🪙',
-            title: `+${drop.coins} coins`,
-            subtitle: drop.sticker ? `Duplicate ${drop.sticker.name} → coins!` : 'Shiny!',
+            icon: 'coin',
+            title: `+${drop.coins} COINS`,
+            subtitle: drop.sticker ? `DUPLICATE ${drop.sticker.name.toUpperCase()} = COINS!` : 'SHINY!',
             rarity: drop.sticker?.rarity ?? 'common',
             isNew: false
           })
@@ -187,10 +180,10 @@ export function useGame(
     const s = stateRef.current
     if (!s) return
     closeMenu()
-    const treat = TREAT_EMOJIS[Math.floor(Math.random() * TREAT_EMOJIS.length)]
+    const treat = TREAT_ICONS[Math.floor(Math.random() * TREAT_ICONS.length)]
     engineRef.current?.playAction('eat', 0.9)
     sfx.munch()
-    pushToast(treat, anchor())
+    pushToast('', anchor(), treat)
     setTimeout(() => addXp(XP_REWARDS.treat()), 500)
     handleDrop(rollDrop(s.stickers, 0.25), 1100)
   }, [addXp, anchor, closeMenu, engineRef, handleDrop, pushToast])
@@ -214,23 +207,24 @@ export function useGame(
     engineRef.current?.celebrate()
     setTimeout(() => addXp(XP_REWARDS.play()), 400)
     handleDrop(rollDrop(s.stickers, 0.15), 1000)
-    pushToast('Zoomies!! 🎉')
+    pushToast('ZOOMIES!!')
   }, [addXp, closeMenu, engineRef, handleDrop, pushToast])
 
-  const talkTo = useCallback(() => {
-    const s = stateRef.current
-    if (!s) return
+  const openChat = useCallback(() => {
     closeMenu()
     engineRef.current?.hold()
-    engineRef.current?.playAction('wave', 1.8)
-    const text = TALK_LINES[Math.floor(Math.random() * TALK_LINES.length)]
-    setUi((u) => ({ ...u, bubble: { text, anchor: anchor() } }))
-    setTimeout(() => addXp(XP_REWARDS.talk()), 300)
-    setTimeout(() => {
-      setUi((u) => ({ ...u, bubble: null }))
-      engineRef.current?.release()
-    }, 5200)
-  }, [addXp, anchor, closeMenu, engineRef])
+    engineRef.current?.playAction('wave', 1.5)
+    setUi((u) => ({ ...u, chat: anchor() }))
+  }, [anchor, closeMenu, engineRef])
+
+  const closeChat = useCallback(() => {
+    setUi((u) => ({ ...u, chat: null }))
+    engineRef.current?.release()
+  }, [engineRef])
+
+  const chatMessageSent = useCallback(() => {
+    addXp(XP_REWARDS.talk())
+  }, [addXp])
 
   const openAlbum = useCallback(() => {
     closeMenu()
@@ -258,7 +252,7 @@ export function useGame(
         streak: { count: newStreak, lastDay: today },
         lastDailyGift: today
       })
-      pushToast(newStreak > 1 ? `Day ${newStreak} together! 🔥` : 'So happy to see you! 💜', a)
+      pushToast(newStreak > 1 ? `DAY ${newStreak} TOGETHER!` : 'SO HAPPY TO SEE YOU!', a)
       setTimeout(() => addXp(XP_REWARDS.daily(newStreak)), 500)
       handleDrop(rollDrop(s.stickers, 1, 2), 1300)
     } else {
@@ -308,7 +302,9 @@ export function useGame(
       feedTreat,
       petPet,
       playTogether,
-      talkTo,
+      openChat,
+      closeChat,
+      chatMessageSent,
       openAlbum,
       closeAlbum,
       openGift

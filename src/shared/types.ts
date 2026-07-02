@@ -1,8 +1,8 @@
 export type Rarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'
 
 export interface StickerDef {
+  /** id doubles as the pixel-icon filename in /px */
   id: string
-  emoji: string
   name: string
   rarity: Rarity
 }

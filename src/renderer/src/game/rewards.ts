@@ -17,41 +17,38 @@ export const RARITY_COLORS: Record<Rarity, string> = {
 }
 
 export const RARITY_LABELS: Record<Rarity, string> = {
-  common: 'Common',
-  uncommon: 'Uncommon',
-  rare: 'Rare ✦',
-  epic: 'Epic ✦✦',
-  legendary: 'LEGENDARY ✦✦✦'
+  common: 'COMMON',
+  uncommon: 'UNCOMMON',
+  rare: 'RARE',
+  epic: 'EPIC',
+  legendary: 'LEGENDARY'
 }
 
 export const STICKERS: StickerDef[] = [
-  { id: 'apple', emoji: '🍎', name: 'Crispy Apple', rarity: 'common' },
-  { id: 'cookie', emoji: '🍪', name: 'Choco Cookie', rarity: 'common' },
-  { id: 'leaf', emoji: '🍀', name: 'Lucky Clover', rarity: 'common' },
-  { id: 'ball', emoji: '⚽', name: 'Bouncy Ball', rarity: 'common' },
-  { id: 'flower', emoji: '🌸', name: 'Cherry Blossom', rarity: 'common' },
-  { id: 'donut', emoji: '🍩', name: 'Sprinkle Donut', rarity: 'common' },
-  { id: 'paw', emoji: '🐾', name: 'Paw Print', rarity: 'common' },
-  { id: 'mug', emoji: '☕', name: 'Cozy Mug', rarity: 'common' },
-  { id: 'cassette', emoji: '📼', name: 'Retro Tape', rarity: 'uncommon' },
-  { id: 'boba', emoji: '🧋', name: 'Boba Tea', rarity: 'uncommon' },
-  { id: 'controller', emoji: '🎮', name: 'Player One', rarity: 'uncommon' },
-  { id: 'cactus', emoji: '🌵', name: 'Hug Me Cactus', rarity: 'uncommon' },
-  { id: 'skate', emoji: '🛹', name: 'Kickflip Deck', rarity: 'uncommon' },
-  { id: 'sushi', emoji: '🍣', name: 'Salmon Nigiri', rarity: 'uncommon' },
-  { id: 'disco', emoji: '🪩', name: 'Disco Ball', rarity: 'rare' },
-  { id: 'rocket', emoji: '🚀', name: 'To The Moon', rarity: 'rare' },
-  { id: 'gem', emoji: '💎', name: 'Shiny Gem', rarity: 'rare' },
-  { id: 'rainbow', emoji: '🌈', name: 'Double Rainbow', rarity: 'rare' },
-  { id: 'ufo', emoji: '🛸', name: 'Tiny UFO', rarity: 'epic' },
-  { id: 'crown', emoji: '👑', name: 'Royal Crown', rarity: 'epic' },
-  { id: 'phoenix', emoji: '🐦‍🔥', name: 'Phoenix Feather', rarity: 'epic' },
-  { id: 'galaxy', emoji: '🌌', name: 'Pocket Galaxy', rarity: 'legendary' },
-  { id: 'unicorn', emoji: '🦄', name: 'Actual Unicorn', rarity: 'legendary' },
-  { id: 'goldcat', emoji: '🐱', name: 'Golden AiMI', rarity: 'legendary' }
+  { id: 'apple', name: 'Crispy Apple', rarity: 'common' },
+  { id: 'cookie', name: 'Choco Cookie', rarity: 'common' },
+  { id: 'clover', name: 'Lucky Clover', rarity: 'common' },
+  { id: 'ball', name: 'Bouncy Ball', rarity: 'common' },
+  { id: 'flower', name: 'Pixel Bloom', rarity: 'common' },
+  { id: 'donut', name: 'Sprinkle Donut', rarity: 'common' },
+  { id: 'paw', name: 'Paw Print', rarity: 'common' },
+  { id: 'mug', name: 'Cozy Mug', rarity: 'common' },
+  { id: 'cassette', name: 'Retro Tape', rarity: 'uncommon' },
+  { id: 'boba', name: 'Boba Tea', rarity: 'uncommon' },
+  { id: 'gamepad', name: 'Player One', rarity: 'uncommon' },
+  { id: 'cactus', name: 'Hug Me Cactus', rarity: 'uncommon' },
+  { id: 'sushi', name: 'Salmon Nigiri', rarity: 'uncommon' },
+  { id: 'disco', name: 'Disco Ball', rarity: 'rare' },
+  { id: 'rocket', name: 'To The Moon', rarity: 'rare' },
+  { id: 'gem', name: 'Shiny Gem', rarity: 'rare' },
+  { id: 'rainbow', name: 'Double Rainbow', rarity: 'rare' },
+  { id: 'ufo', name: 'Tiny UFO', rarity: 'epic' },
+  { id: 'crown', name: 'Royal Crown', rarity: 'epic' },
+  { id: 'planet', name: 'Pocket Planet', rarity: 'epic' },
+  { id: 'goldcat', name: 'Golden AiMI', rarity: 'legendary' }
 ]
 
-export const TREAT_EMOJIS = ['🍎', '🍪', '🍓', '🧀', '🍙', '🥐', '🍰', '🐟']
+export const TREAT_ICONS = ['apple', 'cookie', 'donut', 'sushi', 'boba']
 
 export interface Drop {
   kind: 'coins' | 'sticker'

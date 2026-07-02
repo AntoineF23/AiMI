@@ -3,7 +3,11 @@ import { join } from 'node:path'
 
 let tray: Tray | null = null
 
-export function createTray(opts: { onToggleVisible: () => void; isVisible: () => boolean }): Tray {
+export function createTray(opts: {
+  onToggleVisible: () => void
+  isVisible: () => boolean
+  onOpenSettings: () => void
+}): Tray {
   const iconPath = join(__dirname, '../../resources/trayTemplate.png')
   const icon = nativeImage.createFromPath(iconPath)
   icon.setTemplateImage(true)
@@ -20,6 +24,7 @@ export function createTray(opts: { onToggleVisible: () => void; isVisible: () =>
           rebuildMenu()
         }
       },
+      { label: 'Settings…', click: () => opts.onOpenSettings() },
       { type: 'separator' },
       { label: `AiMI v${app.getVersion()}`, enabled: false },
       { type: 'separator' },
