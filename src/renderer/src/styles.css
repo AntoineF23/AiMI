@@ -1,0 +1,494 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+}
+
+.stage {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.stage > * {
+  pointer-events: none;
+}
+
+.particles {
+  position: absolute;
+  inset: 0;
+}
+
+/* ---------------------------------------------------------------- pet --- */
+
+.pet {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: auto;
+  cursor: grab;
+  will-change: transform;
+}
+
+.pet.dragging {
+  cursor: grabbing;
+}
+
+.pet canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+/* -------------------------------------------------------------- toasts --- */
+
+.toast {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow:
+    0 1px 0 #241a3d,
+    0 -1px 0 #241a3d,
+    1px 0 0 #241a3d,
+    -1px 0 0 #241a3d,
+    0 2px 6px rgba(0, 0, 0, 0.4);
+  animation: toast-rise 1.4s ease-out forwards;
+  white-space: nowrap;
+}
+
+@keyframes toast-rise {
+  0% {
+    opacity: 0;
+    translate: 0 8px;
+    scale: 0.7;
+  }
+  15% {
+    opacity: 1;
+    scale: 1.15;
+  }
+  30% {
+    scale: 1;
+  }
+  100% {
+    opacity: 0;
+    translate: 0 -46px;
+  }
+}
+
+/* -------------------------------------------------------- radial menu --- */
+
+.radial {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.radial-pad {
+  position: absolute;
+  left: -120px;
+  top: -120px;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  pointer-events: auto;
+}
+
+.radial-btn {
+  position: absolute;
+  left: -27px;
+  top: -27px;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  background: rgba(36, 26, 61, 0.92);
+  color: #fff;
+  cursor: pointer;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  animation: pop-in 0.18s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transition:
+    scale 0.12s ease,
+    background 0.12s ease;
+}
+
+.radial-btn:hover {
+  scale: 1.18;
+  background: rgba(74, 48, 116, 0.95);
+}
+
+.radial-btn:active {
+  scale: 0.95;
+}
+
+.radial-emoji {
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.radial-label {
+  font-size: 9px;
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    scale: 0.3;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+/* ----------------------------------------------------------- hud pill --- */
+
+.hud-pill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(36, 26, 61, 0.92);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: auto;
+  animation: pop-in 0.2s ease both;
+}
+
+.hud-level {
+  color: #ffd75e;
+}
+
+.hud-bar {
+  width: 64px;
+  height: 7px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+}
+
+.hud-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #a78bfa, #ff9ecf);
+  transition: width 0.4s ease;
+}
+
+/* -------------------------------------------------------------- bubble --- */
+
+.bubble {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  max-width: 260px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: #fff;
+  color: #241a3d;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  box-shadow: 0 4px 18px rgba(36, 26, 61, 0.3);
+  pointer-events: auto;
+  animation: pop-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.bubble-tail {
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  transform: translateX(-50%) rotate(45deg);
+  border-radius: 3px;
+}
+
+/* -------------------------------------------------------------- gift --- */
+
+.gift {
+  position: absolute;
+  bottom: 6px;
+  font-size: 40px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  pointer-events: auto;
+  filter: drop-shadow(0 3px 6px rgba(36, 26, 61, 0.4));
+  animation: gift-bounce 1.2s ease-in-out infinite;
+}
+
+.gift:hover {
+  animation: gift-shake 0.35s ease-in-out infinite;
+}
+
+@keyframes gift-bounce {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -10px;
+  }
+}
+
+@keyframes gift-shake {
+  0%,
+  100% {
+    rotate: 0deg;
+  }
+  25% {
+    rotate: -8deg;
+  }
+  75% {
+    rotate: 8deg;
+  }
+}
+
+/* -------------------------------------------------------- reward popup --- */
+
+.reward-popup {
+  position: absolute;
+  left: 50%;
+  bottom: 140px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-radius: 16px;
+  border: 2px solid;
+  background: rgba(36, 26, 61, 0.95);
+  color: #fff;
+  animation: popup-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes popup-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(24px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+.reward-emoji {
+  font-size: 38px;
+  animation: reward-spin 0.5s ease both;
+}
+
+@keyframes reward-spin {
+  from {
+    rotate: -20deg;
+    scale: 0.4;
+  }
+  to {
+    rotate: 0deg;
+    scale: 1;
+  }
+}
+
+.reward-rarity {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.reward-new {
+  background: #ff5c8a;
+  color: #fff;
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 9px;
+  animation: gift-bounce 0.8s ease-in-out infinite;
+}
+
+.reward-title {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.reward-subtitle {
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+/* ------------------------------------------------------------ level up --- */
+
+.levelup {
+  position: absolute;
+  left: 50%;
+  top: 32%;
+  transform: translateX(-50%);
+  text-align: center;
+  animation: levelup-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  pointer-events: none;
+}
+
+@keyframes levelup-in {
+  from {
+    opacity: 0;
+    scale: 0.4;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+.levelup-stars {
+  font-size: 22px;
+  animation: gift-bounce 0.7s ease-in-out infinite;
+}
+
+.levelup-title {
+  font-size: 52px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  background: linear-gradient(180deg, #ffd75e, #ff9d3f);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 4px 24px rgba(255, 173, 62, 0.45);
+}
+
+.levelup-sub {
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(36, 26, 61, 0.7);
+}
+
+/* -------------------------------------------------------------- album --- */
+
+.album {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 420px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: rgba(36, 26, 61, 0.97);
+  color: #fff;
+  padding: 16px;
+  pointer-events: auto;
+  animation: pop-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.45);
+}
+
+.album-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.album-title {
+  font-size: 16px;
+  font-weight: 800;
+  flex: 1;
+}
+
+.album-count,
+.album-coins {
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.album-close {
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.album-close:hover {
+  background: rgba(255, 92, 138, 0.6);
+}
+
+.album-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.album-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 10px 4px 8px;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.album-cell.locked {
+  opacity: 0.4;
+}
+
+.album-emoji {
+  font-size: 26px;
+}
+
+.album-name {
+  font-size: 9px;
+  font-weight: 700;
+  text-align: center;
+  opacity: 0.85;
+}
+
+.album-footer {
+  margin-top: 12px;
+  font-size: 11px;
+  opacity: 0.65;
+  text-align: center;
+}

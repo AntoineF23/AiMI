@@ -1,0 +1,33 @@
+{
+  "name": "aimi",
+  "version": "0.1.0",
+  "description": "AiMI — a tiny AI-powered pixel pet that lives on your screen, learns about you, and celebrates everything you do.",
+  "main": "./out/main/index.js",
+  "author": "Antoine Fornas",
+  "license": "MIT",
+  "homepage": "https://github.com/antoinefornas/AiMI",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "sprites": "tsx scripts/generate-sprites.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.0",
+    "@types/pngjs": "^6.0.5",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.2.0",
+    "electron": "^43.0.0",
+    "electron-vite": "^5.0.0",
+    "pngjs": "^7.0.0",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3",
+    "vite": "^7.3.6"
+  },
+  "dependencies": {
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  }
+}

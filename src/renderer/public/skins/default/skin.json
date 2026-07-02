@@ -1,0 +1,78 @@
+{
+  "name": "AiMI Classic",
+  "version": 1,
+  "frameSize": 32,
+  "palette": {
+    "outline": "#241a3d",
+    "body": "#a78bfa",
+    "shade": "#8a68f5",
+    "belly": "#eae2ff",
+    "earInner": "#ff9ecf",
+    "blush": "#ff8fb8",
+    "eye": "#241a3d",
+    "shine": "#ffffff",
+    "mouth": "#5c3a6e"
+  },
+  "animations": {
+    "idle": {
+      "file": "idle.png",
+      "frames": 6,
+      "fps": 5,
+      "loop": true
+    },
+    "walk": {
+      "file": "walk.png",
+      "frames": 6,
+      "fps": 8,
+      "loop": true
+    },
+    "run": {
+      "file": "run.png",
+      "frames": 4,
+      "fps": 12,
+      "loop": true
+    },
+    "sleep": {
+      "file": "sleep.png",
+      "frames": 4,
+      "fps": 2,
+      "loop": true
+    },
+    "happy": {
+      "file": "happy.png",
+      "frames": 6,
+      "fps": 10,
+      "loop": false
+    },
+    "eat": {
+      "file": "eat.png",
+      "frames": 6,
+      "fps": 8,
+      "loop": false
+    },
+    "think": {
+      "file": "think.png",
+      "frames": 4,
+      "fps": 4,
+      "loop": true
+    },
+    "wave": {
+      "file": "wave.png",
+      "frames": 4,
+      "fps": 8,
+      "loop": true
+    },
+    "drag": {
+      "file": "drag.png",
+      "frames": 2,
+      "fps": 4,
+      "loop": true
+    },
+    "land": {
+      "file": "land.png",
+      "frames": 2,
+      "fps": 12,
+      "loop": false
+    }
+  }
+}
