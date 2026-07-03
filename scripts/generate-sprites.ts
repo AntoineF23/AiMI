@@ -295,13 +295,18 @@ interface UPose {
 const LEGS_STAND: [Leg, Leg, Leg, Leg] = [{}, {}, {}, {}]
 
 function drawHornAndMane(g: Grid, cfg: StageCfg, hx: number, hy: number, sx: number, sy: number, flow: number): void {
-  // horn: slanted bands, base → tip
+  // horn: a tapering spike rooted in the FOREHEAD (front of the skull, right
+  // above the eye), sweeping slightly forward — 2px at the base, 1px tip
   const bandColors: ColorKey[] = ['horn1', 'horn2', 'horn3', 'horn4', 'horn4']
-  for (let b = 0; b < cfg.hornBands; b++) {
-    g.fillRect(hx + 1 + Math.floor(b / 2), hy - 2 - b, 2, 1, bandColors[b])
+  const bands = cfg.hornBands
+  for (let b = 0; b < bands; b++) {
+    const bx = hx + 3 + Math.floor(b / 2)
+    const by = hy - 1 - b
+    const w = b < Math.ceil(bands / 2) ? 2 : 1
+    g.fillRect(bx + (w === 1 ? 1 : 0), by, w, 1, bandColors[b])
   }
   if (cfg.hornLit) {
-    g.set(hx + 1 + Math.floor(cfg.hornBands / 2) + 1, hy - 2 - cfg.hornBands, 'hornTip')
+    g.set(hx + 3 + Math.floor(bands / 2) + 1, hy - 1 - bands, 'hornTip')
   }
 
   // forelock
