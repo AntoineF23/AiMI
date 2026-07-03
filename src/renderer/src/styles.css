@@ -50,6 +50,12 @@ img.px {
   inset: 0;
 }
 
+.backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
+}
+
 /* ---------------------------------------------------------------- pet --- */
 
 .pet {

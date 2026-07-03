@@ -106,6 +106,10 @@ export function PetApp() {
   return (
     <div className="stage">
       <canvas ref={particleRef} className="particles" />
+      {/* while a panel is open, clicking anywhere else collapses it */}
+      {(ui.menu || ui.chat || ui.games || ui.album) && (
+        <div className="backdrop hit" onMouseDown={actions.closeAllPanels} />
+      )}
       {skin && (
         <div ref={petRef} className="pet hit">
           <canvas ref={spriteRef} />

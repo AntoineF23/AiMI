@@ -191,6 +191,12 @@ export function useGame(
     engineRef.current?.release()
   }, [engineRef])
 
+  /** Click-away dismissal: collapse every transient panel (not a running game). */
+  const closeAllPanels = useCallback(() => {
+    setUi((u) => ({ ...u, menu: null, chat: null, games: false, album: false }))
+    engineRef.current?.release()
+  }, [engineRef])
+
   const onPetClicked = useCallback(() => {
     sfx.pop()
     if (uiRef.current.menu) {
@@ -454,6 +460,7 @@ export function useGame(
     actions: {
       onPetClicked,
       closeMenu,
+      closeAllPanels,
       feedTreat,
       petPet,
       openGames,

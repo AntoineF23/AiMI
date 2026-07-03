@@ -192,16 +192,17 @@ app.whenReady().then(() => {
       input.dispatchEvent(new Event('input', { bubbles: true }))
       document.querySelector('form.chat-input-row').requestSubmit()
     })()`
+    const clickBackdrop = `document.querySelector('.backdrop')?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))`
     const stages: [number, () => void][] = [
       [6000, () => js(clickPet)],
       [7000, () => shot('menu')],
-      [7500, () => js(clickBtn(3))], // talk → chat panel
-      [8500, () => shot('chat-open')],
-      [9000, () => js(typeAndSend("I really love playing padel! also I just got a golden retriever named Rio and I'm learning to play guitar"))],
-      [12000, () => shot('chat-stream')],
-      [17000, () => shot('chat-done')],
-      [17500, () => js(`document.querySelector('.chat-peek')?.click()`)],
-      [18500, () => shot('peek')],
+      [7300, () => js(clickBackdrop)],
+      [8000, () => shot('collapsed')],
+      [8500, () => js(clickPet)],
+      [9000, () => js(clickBtn(3))], // talk → chat panel
+      [9800, () => shot('chat-open')],
+      [10100, () => js(clickBackdrop)],
+      [10800, () => shot('chat-collapsed')],
       [19000, () => openSettingsWindow()],
       [21000, async () => {
         const img = await settingsWindow?.webContents.capturePage()
