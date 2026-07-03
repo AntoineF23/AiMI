@@ -6,12 +6,43 @@
   "author": "Antoine Fornas",
   "license": "MIT",
   "homepage": "https://github.com/antoinefornas/AiMI",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/antoinefornas/AiMI.git"
+  },
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
-    "sprites": "tsx scripts/generate-sprites.ts",
-    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json"
+    "sprites": "tsx scripts/generate-sprites.ts && tsx scripts/generate-icons.ts && tsx scripts/generate-appicon.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "dist": "electron-vite build && electron-builder --mac"
+  },
+  "build": {
+    "appId": "com.antoinefornas.aimi",
+    "productName": "AiMI",
+    "directories": {
+      "buildResources": "build"
+    },
+    "files": ["out/**", "resources/**", "package.json"],
+    "mac": {
+      "category": "public.app-category.entertainment",
+      "target": [
+        { "target": "dmg", "arch": ["arm64", "x64"] },
+        { "target": "zip", "arch": ["arm64", "x64"] }
+      ],
+      "extendInfo": {
+        "LSUIElement": 1,
+        "NSScreenCaptureUsageDescription": "AiMI only peeks at your screen when you explicitly say yes, to chat about what you're doing. Screenshots are sent to your chosen AI provider and never stored."
+      }
+    },
+    "dmg": {
+      "title": "AiMI ${version}"
+    },
+    "npmRebuild": false,
+    "publish": {
+      "provider": "github"
+    }
   },
   "devDependencies": {
     "@types/node": "^26.1.0",
@@ -20,6 +51,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.2.0",
     "electron": "^43.0.0",
+    "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
     "pngjs": "^7.0.0",
     "tsx": "^4.22.4",
