@@ -1,14 +1,19 @@
 /**
- * Generates the default AiMI skin: pixel-art sprite sheets for every animation,
- * a skin.json manifest, and the macOS tray icon.
+ * Generates every AiMI unicorn spritesheet: 8 coat colors x 4 growth stages
+ * x 10 animations, each with a skin.json manifest, plus the macOS tray icon.
  *
- * The pet is a small, dignified unicorn drawn in side profile (facing right —
- * the engine mirrors it when walking left). Drawn procedurally (shapes +
- * per-frame params) so animations stay consistent and palettes can be swapped
- * to create skin variants.
+ * The coat color is rolled once when the egg hatches (rarity-weighted) and
+ * never changes; the unicorn grows through stages with its level:
+ *   s1 FOAL       — stubby legs, big head, horn nub, wisp of mane
+ *   s2 YEARLING   — youth proportions, short horn
+ *   s3 UNICORN    — full horn and mane
+ *   s4 LEGENDARY  — five-band horn with a lit tip, flowing mane, gold hooves
  *
- * Output: src/renderer/public/skins/<skin>/*  and  resources/tray*.png
- * `--preview <dir>` writes a 6x contact sheet for visual inspection.
+ * Side profile facing right (the engine mirrors when walking left). Serious
+ * pixel art: no blush, small composed eye.
+ *
+ * Output: src/renderer/public/skins/<color>-s<stage>/*  and  resources/tray*.png
+ * `--preview <dir>` writes contact sheets (all anims at s3 + one row per stage).
  */
 import { PNG } from 'pngjs'
 import { mkdirSync, writeFileSync } from 'node:fs'
@@ -19,7 +24,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const SIZE = 32
 
 // ---------------------------------------------------------------------------
-// Palettes
+// Palettes — one per coat color
 // ---------------------------------------------------------------------------
 
 const PALETTE = {
@@ -29,21 +34,30 @@ const PALETTE = {
   mane: '#4f8fd9',
   maneShade: '#3a6fb0',
   hoof: '#3a3a4a',
+  hoofGold: '#d9a83f',
   eye: '#241a3d',
   muzzle: '#9a9ab0',
   earInner: '#c9cddd',
   horn1: '#c05a5a', // base → tip
   horn2: '#cf9a4f',
   horn3: '#5a9a6f',
-  horn4: '#7a6fd0'
+  horn4: '#7a6fd0',
+  hornTip: '#efe9ff'
 } as const
 
 type ColorKey = keyof typeof PALETTE
 type Palette = Record<ColorKey, string>
 
-/** Bundled palette-swap skins — same unicorn, new coat and mane. */
-const SKINS: Record<string, { title: string; palette: Palette }> = {
-  default: { title: 'AiMI Classic', palette: { ...PALETTE } },
+const COLOR_SKINS: Record<string, { title: string; palette: Palette }> = {
+  snow: { title: 'Snow', palette: { ...PALETTE } },
+  rose: {
+    title: 'Rose',
+    palette: { ...PALETTE, coat: '#f5e9ee', shade: '#dcc3cf', mane: '#cf6f96', maneShade: '#a84f75' }
+  },
+  storm: {
+    title: 'Storm',
+    palette: { ...PALETTE, coat: '#d9dde8', shade: '#b3bacd', mane: '#5f7d9c', maneShade: '#46617f' }
+  },
   mint: {
     title: 'Frost',
     palette: {
@@ -58,7 +72,7 @@ const SKINS: Record<string, { title: string; palette: Palette }> = {
       horn4: '#9a8fe0'
     }
   },
-  peach: {
+  ember: {
     title: 'Ember',
     palette: {
       ...PALETTE,
@@ -71,6 +85,132 @@ const SKINS: Record<string, { title: string; palette: Palette }> = {
       horn3: '#d9c94f',
       horn4: '#cf9a4f'
     }
+  },
+  lilac: {
+    title: 'Lilac',
+    palette: { ...PALETTE, coat: '#eee9f8', shade: '#d2c8e8', mane: '#8f6fd0', maneShade: '#6f4fb0' }
+  },
+  gold: {
+    title: 'Golden',
+    palette: {
+      ...PALETTE,
+      coat: '#f7f0dc',
+      shade: '#e2d4ae',
+      mane: '#d9a83f',
+      maneShade: '#b0832a',
+      horn1: '#b0832a',
+      horn2: '#cf9a4f',
+      horn3: '#d9a83f',
+      horn4: '#e8c96f',
+      hornTip: '#fff3c4'
+    }
+  },
+  midnight: {
+    title: 'Midnight',
+    palette: {
+      ...PALETTE,
+      outline: '#15102a',
+      coat: '#454063',
+      shade: '#332f4c',
+      mane: '#b8c4e8',
+      maneShade: '#8f9fc9',
+      eye: '#efeaff',
+      muzzle: '#8f8fb0',
+      earInner: '#332f4c',
+      horn1: '#8f9fc9',
+      horn2: '#a8b4dd',
+      horn3: '#b8c4e8',
+      horn4: '#d8dff5',
+      hornTip: '#ffffff'
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Growth stages
+// ---------------------------------------------------------------------------
+
+interface StageCfg {
+  bodyCx: number
+  bodyCy: number
+  bodyRx: number
+  bodyRy: number
+  legBaseX: [number, number, number, number]
+  legTopY: number
+  footY: number
+  shoulder: [number, number]
+  headBase: [number, number]
+  hornBands: number
+  hornLit: boolean
+  maneBlocks: number
+  tailSegs: number
+  hoofKey: ColorKey
+}
+
+const STAGES: Record<number, StageCfg> = {
+  1: {
+    bodyCx: 15.5,
+    bodyCy: 20,
+    bodyRx: 6,
+    bodyRy: 3.5,
+    legBaseX: [11, 13, 18, 20],
+    legTopY: 22,
+    footY: 26,
+    shoulder: [17, 15],
+    headBase: [19, 11],
+    hornBands: 1,
+    hornLit: false,
+    maneBlocks: 2,
+    tailSegs: 3,
+    hoofKey: 'hoof'
+  },
+  2: {
+    bodyCx: 15.5,
+    bodyCy: 18,
+    bodyRx: 7.5,
+    bodyRy: 4.5,
+    legBaseX: [10, 12.5, 19, 21.5],
+    legTopY: 20,
+    footY: 26,
+    shoulder: [18, 12],
+    headBase: [21, 8],
+    hornBands: 2,
+    hornLit: false,
+    maneBlocks: 4,
+    tailSegs: 4,
+    hoofKey: 'hoof'
+  },
+  3: {
+    bodyCx: 15.5,
+    bodyCy: 17.5,
+    bodyRx: 8.5,
+    bodyRy: 5,
+    legBaseX: [9, 12, 19, 22],
+    legTopY: 20,
+    footY: 26,
+    shoulder: [19, 11],
+    headBase: [22, 7],
+    hornBands: 4,
+    hornLit: false,
+    maneBlocks: 6,
+    tailSegs: 6,
+    hoofKey: 'hoof'
+  },
+  4: {
+    bodyCx: 15.5,
+    bodyCy: 17.5,
+    bodyRx: 8.5,
+    bodyRy: 5,
+    legBaseX: [9, 12, 19, 22],
+    legTopY: 20,
+    footY: 26,
+    shoulder: [19, 11],
+    headBase: [22, 6],
+    hornBands: 5,
+    hornLit: true,
+    maneBlocks: 8,
+    tailSegs: 6,
+    hoofKey: 'hoofGold'
   }
 }
 
@@ -108,7 +248,7 @@ class Grid {
   }
 
   fillRect(x0: number, y0: number, w: number, h: number, c: ColorKey) {
-    for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) this.set(x, y, c)
+    for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) this.set(Math.round(x), Math.round(y), c)
   }
 
   /** 1px outer outline around everything drawn so far. */
@@ -132,7 +272,7 @@ class Grid {
 }
 
 // ---------------------------------------------------------------------------
-// The unicorn, parameterized per frame
+// The unicorn, parameterized per frame and growth stage
 // ---------------------------------------------------------------------------
 
 interface Leg {
@@ -141,35 +281,59 @@ interface Leg {
 }
 
 interface UPose {
-  dy?: number // whole-body vertical offset
-  legs?: [Leg, Leg, Leg, Leg] // backFar, backNear, frontFar, frontNear
+  dy?: number
+  legs?: [Leg, Leg, Leg, Leg]
   tail?: 0 | 1 | 2 | 3
   eye?: 'open' | 'blink' | 'closed' | 'wide' | 'up'
-  headDy?: number // head+neck offset (positive = lowered, grazing)
+  headDy?: number
   headDx?: number
   earFlick?: boolean
   lying?: boolean
-  maneFlow?: boolean // streaming back when galloping
+  maneFlow?: boolean
 }
 
 const LEGS_STAND: [Leg, Leg, Leg, Leg] = [{}, {}, {}, {}]
 
-/** Draws one frame; returns the hat anchor offset {dx, dy} vs the base pose. */
-function drawUnicorn(g: Grid, p: UPose): { dx: number; dy: number } {
+function drawHornAndMane(g: Grid, cfg: StageCfg, hx: number, hy: number, sx: number, sy: number, flow: number): void {
+  // horn: slanted bands, base → tip
+  const bandColors: ColorKey[] = ['horn1', 'horn2', 'horn3', 'horn4', 'horn4']
+  for (let b = 0; b < cfg.hornBands; b++) {
+    g.fillRect(hx + 1 + Math.floor(b / 2), hy - 2 - b, 2, 1, bandColors[b])
+  }
+  if (cfg.hornLit) {
+    g.set(hx + 1 + Math.floor(cfg.hornBands / 2) + 1, hy - 2 - cfg.hornBands, 'hornTip')
+  }
+
+  // forelock
+  g.fillRect(hx, hy - 1, 2, 1, 'mane')
+
+  // crest along the neck, extras spill onto the back for older stages
+  const alongNeck = Math.min(cfg.maneBlocks, 6)
+  for (let i = 0; i < alongNeck; i++) {
+    const t = alongNeck === 1 ? 0 : i / (alongNeck - 1)
+    const mx = Math.round(sx + (hx - sx) * t) - 1 + flow * Math.round(t * 2)
+    const my = Math.round(sy + (hy - sy) * t) - 1
+    g.fillRect(mx, my, 2, 2, i % 2 === 0 ? 'mane' : 'maneShade')
+  }
+  for (let i = 0; i < cfg.maneBlocks - alongNeck; i++) {
+    g.fillRect(sx - 3 - i * 2 + flow, sy + 1 + i, 2, 2, i % 2 === 0 ? 'maneShade' : 'mane')
+  }
+}
+
+/** Draws one frame; returns the hat anchor offset {dx, dy}. */
+function drawUnicorn(g: Grid, cfg: StageCfg, p: UPose): { dx: number; dy: number } {
   const dy = p.dy ?? 0
   const headDx = p.headDx ?? 0
   const headDy = p.headDy ?? 0
   const eye = p.eye ?? 'open'
 
   if (p.lying) {
-    drawLying(g, p)
-    // hat anchor: hats are authored centered on x~15.5 with a brim at y~10;
-    // the unicorn skull sits at (21,14+dy) when lying
+    drawLying(g, cfg, p)
     return { dx: 8, dy: 2 + dy }
   }
 
-  // tail (behind body) — four sway/stream variants
-  const tailFrames: [number, number][][] = [
+  // tail (behind body)
+  const tailAll: [number, number][][] = [
     [
       [6, 14],
       [5, 16],
@@ -194,7 +358,6 @@ function drawUnicorn(g: Grid, p: UPose): { dx: number; dy: number } {
       [4, 22],
       [6, 23]
     ],
-    // streaming back (gallop)
     [
       [5, 14],
       [3, 14],
@@ -204,66 +367,53 @@ function drawUnicorn(g: Grid, p: UPose): { dx: number; dy: number } {
       [3, 20]
     ]
   ]
-  tailFrames[p.tail ?? 0].forEach(([tx, ty], i) => {
-    g.fillRect(tx, ty + dy, 2, 2, i % 2 === 0 ? 'mane' : 'maneShade')
+  // anchor the tail to this stage's rump
+  const rumpX = Math.round(cfg.bodyCx - cfg.bodyRx)
+  const rumpY = Math.round(cfg.bodyCy - cfg.bodyRy + 1)
+  tailAll[p.tail ?? 0].slice(0, cfg.tailSegs).forEach(([tx, ty], i) => {
+    g.fillRect(tx - 7 + rumpX, ty - 14 + rumpY + dy, 2, 2, i % 2 === 0 ? 'mane' : 'maneShade')
   })
 
-  // legs: [backFar, backNear, frontFar, frontNear] — far pair shaded for depth
+  // legs: [backFar, backNear, frontFar, frontNear]
   const legs = p.legs ?? LEGS_STAND
-  const baseX = [9, 12, 19, 22]
   const far = [true, false, true, false]
   legs.forEach((leg, i) => {
-    const lx = baseX[i] + (leg.dx ?? 0)
+    const lx = Math.round(cfg.legBaseX[i]) + (leg.dx ?? 0)
     const lift = leg.lift ?? 0
-    const topY = 20 + dy
-    const footY = 26 + dy - lift
+    const topY = cfg.legTopY + dy
+    const footY = cfg.footY + dy - lift
     if (footY > topY) g.fillRect(lx, topY, 2, footY - topY + 1, far[i] ? 'shade' : 'coat')
-    g.fillRect(lx, footY + 1, 2, 2, 'hoof')
+    g.fillRect(lx, footY + 1, 2, 2, cfg.hoofKey)
   })
 
-  // body
-  g.fillEllipse(15.5, 17.5 + dy, 8.5, 5, 'coat')
-  // belly shading
-  g.fillRect(10, 21 + dy, 10, 1, 'shade')
+  // body + belly shading
+  g.fillEllipse(cfg.bodyCx, cfg.bodyCy + dy, cfg.bodyRx, cfg.bodyRy, 'coat')
+  g.fillRect(Math.round(cfg.bodyCx - cfg.bodyRx + 3), Math.round(cfg.bodyCy + cfg.bodyRy - 1.5) + dy, Math.round(cfg.bodyRx * 2 - 6), 1, 'shade')
 
-  // neck: blocks lerped from shoulder to head base
-  const sx = 19
-  const sy = 11 + dy
-  const hx = 22 + headDx
-  const hy = 7 + headDy + dy
+  // neck
+  const [sx0, sy0] = cfg.shoulder
+  const sy = sy0 + dy
+  const hx = cfg.headBase[0] + headDx
+  const hy = cfg.headBase[1] + headDy + dy
   for (let i = 0; i <= 5; i++) {
     const t = i / 5
-    g.fillRect(Math.round(sx + (hx - sx) * t), Math.round(sy + (hy - sy) * t), 3, 4, 'coat')
+    g.fillRect(Math.round(sx0 + (hx - sx0) * t), Math.round(sy + (hy - sy) * t), 3, 4, 'coat')
   }
 
-  // head (origin = hx, hy): skull + snout to the right
+  // head: skull + snout
   g.fillRect(hx, hy, 5, 5, 'coat')
   g.fillRect(hx + 4, hy + 2, 3, 3, 'coat')
-  g.set(hx + 6, hy + 3, 'muzzle') // nostril
+  g.set(hx + 6, hy + 3, 'muzzle')
 
   // ear
   const earY = hy - 2 - (p.earFlick ? 1 : 0)
   g.fillRect(hx - 1, earY, 2, 2, 'coat')
   g.set(hx - 1, earY + 1, 'earInner')
 
-  // horn: slanted muted-rainbow bands, base → tip
-  g.fillRect(hx + 1, hy - 2, 2, 1, 'horn1')
-  g.fillRect(hx + 1, hy - 3, 2, 1, 'horn2')
-  g.fillRect(hx + 2, hy - 4, 2, 1, 'horn3')
-  g.fillRect(hx + 2, hy - 5, 2, 1, 'horn4')
+  drawHornAndMane(g, cfg, hx, hy, sx0, sy, p.maneFlow ? -1 : 0)
+  g.fillRect(sx0 - 3, sy + 1, 2, 2, 'maneShade') // shoulder tuft
 
-  // mane: forelock + crest along the neck, with flow variant
-  g.fillRect(hx, hy - 1, 2, 1, 'mane')
-  const flow = p.maneFlow ? -1 : 0
-  for (let i = 0; i <= 5; i++) {
-    const t = i / 5
-    const mx = Math.round(sx + (hx - sx) * t) - 1 + flow * Math.round(t * 2)
-    const my = Math.round(sy + (hy - sy) * t) - 1
-    g.fillRect(mx, my, 2, 2, i % 2 === 0 ? 'mane' : 'maneShade')
-  }
-  g.fillRect(16, 12 + dy, 2, 2, 'maneShade') // shoulder tuft
-
-  // eye — small and composed, nothing kawaii
+  // eye — small and composed
   const ex = hx + 3
   const eyY = hy + 1
   if (eye === 'open') {
@@ -277,53 +427,47 @@ function drawUnicorn(g: Grid, p: UPose): { dx: number; dy: number } {
   }
 
   g.outline()
-  // hat anchor: shift the cat-era hat art (+9,-5) onto the unicorn skull
+  // hats are authored centered on x~15.5 with a brim at y~10
   return { dx: hx - 13, dy: hy - 12 }
 }
 
 /** Sleeping pose: legs folded, head resting low, tail curled. */
-function drawLying(g: Grid, p: UPose): void {
+function drawLying(g: Grid, cfg: StageCfg, p: UPose): void {
   const dy = p.dy ?? 0
-  // tail curled at the back
+  const small = cfg.bodyRx < 7
+  const rx = small ? 7 : 9
+  const cy = 21 + dy
+
   ;[
     [5, 20],
     [4, 22],
     [5, 24],
     [7, 25]
-  ].forEach(([tx, ty], i) => g.fillRect(tx, ty, 2, 2, i % 2 === 0 ? 'mane' : 'maneShade'))
+  ]
+    .slice(0, Math.max(2, cfg.tailSegs - 2))
+    .forEach(([tx, ty], i) => g.fillRect(tx + (small ? 2 : 0), ty, 2, 2, i % 2 === 0 ? 'mane' : 'maneShade'))
 
-  // body low and long
-  g.fillEllipse(15, 21 + dy, 9, 4.5, 'coat')
-  // folded-leg hoof nubs
-  g.fillRect(11, 24, 2, 2, 'hoof')
-  g.fillRect(18, 24, 2, 2, 'hoof')
+  g.fillEllipse(15, cy, rx, small ? 3.8 : 4.5, 'coat')
+  g.fillRect(small ? 12 : 11, 24, 2, 2, cfg.hoofKey)
+  g.fillRect(small ? 17 : 18, 24, 2, 2, cfg.hoofKey)
 
-  // short neck + resting head
-  const hx = 21
-  const hy = 14 + dy
-  g.fillRect(19, 17 + dy, 4, 4, 'coat')
+  const hx = small ? 19 : 21
+  const hy = (small ? 15 : 14) + dy
+  g.fillRect(hx - 2, hy + 3, 4, 4, 'coat')
   g.fillRect(hx, hy, 5, 5, 'coat')
   g.fillRect(hx + 4, hy + 2, 3, 3, 'coat')
   g.set(hx + 6, hy + 3, 'muzzle')
 
-  // ear, horn, forelock
   g.fillRect(hx - 1, hy - 2, 2, 2, 'coat')
   g.set(hx - 1, hy - 1, 'earInner')
-  g.fillRect(hx + 1, hy - 2, 2, 1, 'horn1')
-  g.fillRect(hx + 1, hy - 3, 2, 1, 'horn2')
-  g.fillRect(hx + 2, hy - 4, 2, 1, 'horn3')
-  g.fillRect(hx + 2, hy - 5, 2, 1, 'horn4')
-  g.fillRect(hx, hy - 1, 2, 1, 'mane')
-  g.fillRect(18, 16 + dy, 2, 2, 'maneShade')
+  drawHornAndMane(g, cfg, hx, hy, hx - 2, hy + 4, 0)
 
-  // closed eye
   g.set(hx + 3, hy + 2, 'eye')
-
   g.outline()
 }
 
 // ---------------------------------------------------------------------------
-// Animation definitions
+// Animation definitions (shared across stages)
 // ---------------------------------------------------------------------------
 
 interface AnimDef {
@@ -372,12 +516,7 @@ const ANIMATIONS: Record<string, AnimDef> = {
   sleep: {
     fps: 2,
     loop: true,
-    frames: [
-      { lying: true },
-      { lying: true, dy: 1 },
-      { lying: true, dy: 1 },
-      { lying: true }
-    ]
+    frames: [{ lying: true }, { lying: true, dy: 1 }, { lying: true, dy: 1 }, { lying: true }]
   },
   happy: {
     fps: 10,
@@ -525,81 +664,97 @@ function drawTrayIcon(size: 16 | 32): PNG {
 const resourcesDir = join(ROOT, 'resources')
 mkdirSync(resourcesDir, { recursive: true })
 
-// render all frames once (palette applied at write time)
-const allGrids: Record<string, Grid[]> = {}
-const allHeadDy: Record<string, number[]> = {}
-const allHeadDx: Record<string, number[]> = {}
-for (const [name, def] of Object.entries(ANIMATIONS)) {
-  const grids: Grid[] = []
-  const headDy: number[] = []
-  const headDx: number[] = []
-  for (const params of def.frames) {
-    const g = new Grid(SIZE, SIZE)
-    const anchor = drawUnicorn(g, params)
-    headDy.push(anchor.dy)
-    headDx.push(anchor.dx)
-    grids.push(g)
-  }
-  allGrids[name] = grids
-  allHeadDy[name] = headDy
-  allHeadDx[name] = headDx
-}
-
-for (const [skinName, skin] of Object.entries(SKINS)) {
-  const skinDir = join(ROOT, 'src/renderer/public/skins', skinName)
-  mkdirSync(skinDir, { recursive: true })
-  const manifest: {
-    name: string
-    version: number
-    frameSize: number
-    palette: Record<string, string>
-    animations: Record<
-      string,
-      { file: string; frames: number; fps: number; loop: boolean; headDy: number[]; headDx: number[] }
-    >
-  } = {
-    name: skin.title,
-    version: 2,
-    frameSize: SIZE,
-    palette: { ...skin.palette },
-    animations: {}
-  }
+// render all frames per stage (palette applied at write time)
+type StageRender = { grids: Record<string, Grid[]>; headDy: Record<string, number[]>; headDx: Record<string, number[]> }
+const rendered: Record<number, StageRender> = {}
+for (const [stageStr, cfg] of Object.entries(STAGES)) {
+  const stage = Number(stageStr)
+  const out: StageRender = { grids: {}, headDy: {}, headDx: {} }
   for (const [name, def] of Object.entries(ANIMATIONS)) {
-    writeFileSync(join(skinDir, `${name}.png`), PNG.sync.write(gridToPng(allGrids[name], 1, skin.palette)))
-    manifest.animations[name] = {
-      file: `${name}.png`,
-      frames: def.frames.length,
-      fps: def.fps,
-      loop: def.loop,
-      headDy: allHeadDy[name],
-      headDx: allHeadDx[name]
+    out.grids[name] = []
+    out.headDy[name] = []
+    out.headDx[name] = []
+    for (const params of def.frames) {
+      const g = new Grid(SIZE, SIZE)
+      const anchor = drawUnicorn(g, cfg, params)
+      out.grids[name].push(g)
+      out.headDy[name].push(anchor.dy)
+      out.headDx[name].push(anchor.dx)
     }
   }
-  writeFileSync(join(skinDir, 'skin.json'), JSON.stringify(manifest, null, 2))
+  rendered[stage] = out
+}
+
+let written = 0
+for (const [colorId, color] of Object.entries(COLOR_SKINS)) {
+  for (const stage of [1, 2, 3, 4]) {
+    const skinDir = join(ROOT, 'src/renderer/public/skins', `${colorId}-s${stage}`)
+    mkdirSync(skinDir, { recursive: true })
+    const r = rendered[stage]
+    const manifest: {
+      name: string
+      version: number
+      frameSize: number
+      palette: Record<string, string>
+      animations: Record<
+        string,
+        { file: string; frames: number; fps: number; loop: boolean; headDy: number[]; headDx: number[] }
+      >
+    } = {
+      name: `${color.title} unicorn (stage ${stage})`,
+      version: 3,
+      frameSize: SIZE,
+      palette: { ...color.palette },
+      animations: {}
+    }
+    for (const [name, def] of Object.entries(ANIMATIONS)) {
+      writeFileSync(join(skinDir, `${name}.png`), PNG.sync.write(gridToPng(r.grids[name], 1, color.palette)))
+      manifest.animations[name] = {
+        file: `${name}.png`,
+        frames: def.frames.length,
+        fps: def.fps,
+        loop: def.loop,
+        headDy: r.headDy[name],
+        headDx: r.headDx[name]
+      }
+    }
+    writeFileSync(join(skinDir, 'skin.json'), JSON.stringify(manifest, null, 2))
+    written++
+  }
 }
 
 writeFileSync(join(resourcesDir, 'trayTemplate.png'), PNG.sync.write(drawTrayIcon(16)))
 writeFileSync(join(resourcesDir, 'trayTemplate@2x.png'), PNG.sync.write(drawTrayIcon(32)))
 
-// Optional preview contact sheet (6x scale, one row per animation)
+// Optional preview: all anims at stage 3 (snow) + idle row per stage per a few colors
 const previewFlag = process.argv.indexOf('--preview')
 if (previewFlag !== -1) {
   const outDir = process.argv[previewFlag + 1] ?? ROOT
   const scale = 6
-  const rows = Object.entries(allGrids)
-  const maxFrames = Math.max(...rows.map(([, g]) => g.length))
-  const sheet = new PNG({
-    width: maxFrames * SIZE * scale,
-    height: rows.length * SIZE * scale,
-    bgColor: { red: 255, green: 255, blue: 255 }
-  })
-  rows.forEach(([, grids], row) => {
-    const strip = gridToPng(grids, scale)
-    PNG.bitblt(strip, sheet, 0, 0, strip.width, strip.height, 0, row * SIZE * scale)
-  })
-  writeFileSync(join(outDir, 'preview.png'), PNG.sync.write(sheet))
-  console.log(`preview written to ${join(outDir, 'preview.png')}`)
+  {
+    const rows = Object.entries(rendered[3].grids)
+    const maxFrames = Math.max(...rows.map(([, g]) => g.length))
+    const sheet = new PNG({ width: maxFrames * SIZE * scale, height: rows.length * SIZE * scale })
+    rows.forEach(([, grids], row) => {
+      const strip = gridToPng(grids, scale)
+      PNG.bitblt(strip, sheet, 0, 0, strip.width, strip.height, 0, row * SIZE * scale)
+    })
+    writeFileSync(join(outDir, 'preview.png'), PNG.sync.write(sheet))
+  }
+  {
+    // growth + colors: idle frame 0 of each stage, one row per color
+    const colors = Object.entries(COLOR_SKINS)
+    const sheet = new PNG({ width: 4 * SIZE * scale, height: colors.length * SIZE * scale })
+    colors.forEach(([, color], row) => {
+      for (let stage = 1; stage <= 4; stage++) {
+        const strip = gridToPng([rendered[stage].grids['idle'][0]], scale, color.palette)
+        PNG.bitblt(strip, sheet, 0, 0, strip.width, strip.height, (stage - 1) * SIZE * scale, row * SIZE * scale)
+      }
+    })
+    writeFileSync(join(outDir, 'growth.png'), PNG.sync.write(sheet))
+  }
+  console.log(`previews written to ${outDir}`)
 }
 
-console.log(`✔ skins written: ${Object.keys(SKINS).join(', ')} (${Object.keys(ANIMATIONS).length} animations each)`)
+console.log(`✔ ${written} skins written (${Object.keys(COLOR_SKINS).length} colors x 4 stages, ${Object.keys(ANIMATIONS).length} animations each)`)
 console.log(`✔ tray icons written to ${resourcesDir}`)

@@ -11,7 +11,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const SIZE = 1024
 const FRAME = 32
 
-const sheet = PNG.sync.read(readFileSync(join(ROOT, 'src/renderer/public/skins/default/idle.png')))
+const sheet = PNG.sync.read(readFileSync(join(ROOT, 'src/renderer/public/skins/snow-s3/idle.png')))
 const icon = new PNG({ width: SIZE, height: SIZE })
 
 const hexToRgb = (h: string): [number, number, number] => {

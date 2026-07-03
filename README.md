@@ -12,6 +12,7 @@ A tiny pixel-art unicorn that lives on top of your screen. It wanders along the 
 - **It can (politely) look at your screen** — only when you say yes, only one downscaled screenshot, sent straight to your chosen provider and never stored.
 - **Web-aware** — paste a YouTube link or article, it fetches the title and chats about it. No search API key needed.
 - **Super gamified** — XP toasts, level-ups, coins, sticker album (21 to collect, 5 rarity tiers), daily gifts, streaks that never punish, three minigames (Catch the Treat, Pong vs Pet, Tic Tac Paw), hats to unlock, and evolutions: hatchling → kiddo → chonk.
+- **Born, not chosen** — every egg hatches into a randomly rolled coat color (8 colors, rarity-weighted — Midnight is legendary). The color is forever. Your unicorn grows from foal to yearling to unicorn to legendary as it levels.
 - **100% pixel art** — every icon, sticker and panel is generated pixel art. No emoji were harmed.
 - **Private by default** — no account, no telemetry, no cloud. Your API key is stored encrypted (macOS Keychain-backed). Everything lives on your machine.
 
@@ -45,11 +46,9 @@ npm run dist       # build the .dmg
 
 Electron + TypeScript + React. The pet is a deterministic local simulation (state machine + physics at 60fps) — the AI is an async brain on top, so the pet never freezes waiting for a model. Main-process modules: `ai/` (Vercel AI SDK provider registry), `brain/` (thought ticks + JSON actions), `memory/` (node:sqlite), `capture/`, `tools/`.
 
-## Custom skins
+## Art
 
-Your pet's look is a folder: `skin.json` + one PNG strip per animation. Drop folders into
-`~/Library/Application Support/aimi/skins/` and they appear in Settings → Pet.
-See [docs/SKINS.md](docs/SKINS.md) for the full format — palette swaps take five minutes.
+Every sprite, icon and sticker is generated pixel art (`npm run sprites`). Coat palettes and growth-stage anatomy live in `scripts/generate-sprites.ts` — see [docs/SKINS.md](docs/SKINS.md) if you want to mod them.
 
 ## Privacy
 

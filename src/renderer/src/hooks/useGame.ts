@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { stageForLevel, type GameState, type Rarity, type StickerDef } from '../../../shared/types'
+import { rollUnicornColor, stageForLevel, UNICORN_COLORS, type GameState, type Rarity, type StickerDef } from '../../../shared/types'
 import { levelFromXp } from '../game/xp'
 import type { GameId } from '../games/GamesMenu'
 import { rollDrop, XP_REWARDS, TREAT_ICONS } from '../game/rewards'
@@ -75,8 +75,24 @@ export function useGame(
   useEffect(() => {
     window.aimi.loadState().then((s) => {
       setMuted(s.muted)
+      // migration: pets hatched before colors existed get theirs rolled now
+      if (s.onboardedAt && !s.color) {
+        const c = rollUnicornColor()
+        s = { ...s, color: c.id }
+        setTimeout(() => {
+          sfx.reward(c.rarity)
+          pushPopup({
+            icon: 'star',
+            title: `A ${c.label} UNICORN!`,
+            subtitle: 'YOUR COAT COLOR IS YOURS FOREVER',
+            rarity: c.rarity,
+            isNew: true
+          })
+        }, 3000)
+      }
       setState(s)
     })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   useEffect(() => {
     if (state) window.aimi.saveState(state)
@@ -285,12 +301,6 @@ export function useGame(
     pushToast('ZOOMIES!!')
   }, [addXp, closeGames, engineRef, handleDrop, pushToast])
 
-  /** Called after the renderer applied a new skin (persists the choice). */
-  const skinChanged = useCallback((id: string) => {
-    const s = stateRef.current
-    if (s && s.skin !== id) setState({ ...s, skin: id })
-  }, [])
-
   const setAccessory = useCallback(
     (id: string | null) => {
       const s = stateRef.current
@@ -381,14 +391,26 @@ export function useGame(
     (name: string) => {
       const s = stateRef.current
       if (!s) return
-      setState({ ...s, petName: name || 'AiMI', onboardedAt: new Date().toISOString() })
+      // the egg decides: coat color is rolled once, forever
+      const color = UNICORN_COLORS.find((c) => c.id === s.color) ?? rollUnicornColor()
+      setState({ ...s, petName: name || 'AiMI', color: color.id, onboardedAt: new Date().toISOString() })
       sfx.levelUp()
       const a = anchor()
       particlesRef.current?.emitConfetti(a.x, a.y, 90)
       engineRef.current?.celebrate()
       pushToast(`WELCOME ${(name || 'AiMI').toUpperCase()}!`, a)
+      setTimeout(() => {
+        sfx.reward(color.rarity)
+        pushPopup({
+          icon: 'star',
+          title: `A ${color.label} FOAL HATCHED!`,
+          subtitle: 'ITS COAT COLOR IS ITS DESTINY — FOREVER',
+          rarity: color.rarity,
+          isNew: true
+        })
+      }, 1500)
     },
-    [anchor, engineRef, particlesRef, pushToast]
+    [anchor, engineRef, particlesRef, pushPopup, pushToast]
   )
 
   const openAlbum = useCallback(() => {
@@ -473,7 +495,6 @@ export function useGame(
       finishGame,
       zoomies,
       setAccessory,
-      skinChanged,
       openChat,
       closeChat,
       chatMessageSent,

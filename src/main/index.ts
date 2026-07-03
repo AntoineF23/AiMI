@@ -1,7 +1,6 @@
-import { app, BrowserWindow, ipcMain, net, protocol, screen } from 'electron'
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { join, normalize } from 'node:path'
-import { pathToFileURL } from 'node:url'
+import { app, BrowserWindow, ipcMain, screen } from 'electron'
+import { writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { createTray } from './tray'
 import { registerStoreIpc } from './store'
 import { registerAiIpc } from './ai/chat'
@@ -91,40 +90,11 @@ function syncBoundsToDisplay() {
   petWindow.setBounds(petWindowBounds())
 }
 
-const userSkinsDir = () => join(app.getPath('userData'), 'skins')
-
 app.whenReady().then(() => {
   // Menu-bar utility: no Dock icon.
   app.dock?.hide()
 
-  // Community skins: drop a folder with skin.json + PNGs into userData/skins.
-  protocol.handle('aimi-skin', (req) => {
-    const url = new URL(req.url)
-    const rel = decodeURIComponent(url.hostname + url.pathname)
-    const base = userSkinsDir()
-    const target = normalize(join(base, rel))
-    if (!target.startsWith(base)) return new Response('forbidden', { status: 403 })
-    return net.fetch(pathToFileURL(target).toString())
-  })
-
-  ipcMain.handle('skins:list', () => {
-    try {
-      return readdirSync(userSkinsDir(), { withFileTypes: true })
-        .filter((d) => d.isDirectory() && existsSync(join(userSkinsDir(), d.name, 'skin.json')))
-        .map((d) => {
-          try {
-            const manifest = JSON.parse(readFileSync(join(userSkinsDir(), d.name, 'skin.json'), 'utf-8'))
-            return { id: d.name, label: String(manifest.name ?? d.name).toUpperCase() }
-          } catch {
-            return { id: d.name, label: d.name.toUpperCase() }
-          }
-        })
-    } catch {
-      return []
-    }
-  })
-
-  registerStoreIpc()
+    registerStoreIpc()
   registerAiIpc(() => petWindow)
   registerMemoryIpc()
   registerCaptureIpc(() => petWindow)
@@ -149,9 +119,6 @@ app.whenReady().then(() => {
   })
   ipcMain.on('pet:set-muted', (_e, muted: boolean) => {
     petWindow?.webContents.send('pet:muted', !!muted)
-  })
-  ipcMain.on('pet:set-skin', (_e, skinId: string) => {
-    petWindow?.webContents.send('pet:skin', String(skinId).slice(0, 60))
   })
 
   screen.on('display-metrics-changed', syncBoundsToDisplay)

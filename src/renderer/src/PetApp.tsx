@@ -14,11 +14,7 @@ import { CatchGame } from './games/CatchGame'
 import { PongGame } from './games/PongGame'
 import { TttGame } from './games/TttGame'
 import { levelFromXp } from './game/xp'
-import { BUILTIN_SKINS, stageForLevel } from '../../shared/types'
-
-export function skinBaseUrl(id: string): string {
-  return BUILTIN_SKINS.some((s) => s.id === id) ? `./skins/${id}` : `aimi-skin://${id}`
-}
+import { stageForLevel } from '../../shared/types'
 
 /**
  * Live pet position for anchored UI (menu, chat, bubbles) so panels follow
@@ -59,28 +55,22 @@ export function PetApp() {
 
   useEffect(() => initInteractivity(), [])
 
-  // load the skin the pet was wearing (fall back to default art)
+  // art follows identity: coat color (rolled at hatch) x growth stage (level)
   const stateLoaded = game.state !== null
+  const petColor = game.state?.color || 'snow'
+  const petStage = stageForLevel(levelFromXp(game.state?.totalXp ?? 0))
   useEffect(() => {
-    if (!gameRef.current.state) return
-    const id = gameRef.current.state.skin || 'default'
-    loadSkin(skinBaseUrl(id))
-      .then(setSkin)
-      .catch(() => loadSkin('./skins/default').then(setSkin).catch(console.error))
-  }, [stateLoaded])
-
-  // live skin switching from the settings window
-  useEffect(() => {
-    return window.aimi.pet.onSkinChanged((id) => {
-      loadSkin(skinBaseUrl(id))
-        .then((s) => {
-          engineRef.current?.setSkin(s)
-          setSkin(s)
-          gameRef.current.actions.skinChanged(id)
-        })
-        .catch(console.error)
-    })
-  }, [])
+    if (!stateLoaded) return
+    loadSkin(`./skins/${petColor}-s${petStage.stage}`)
+      .then((s) => {
+        setSkin(s)
+        if (engineRef.current) {
+          engineRef.current.setSkin(s)
+          engineRef.current.setScale(petStage.scale)
+        }
+      })
+      .catch(() => loadSkin(`./skins/snow-s${petStage.stage}`).then(setSkin).catch(console.error))
+  }, [stateLoaded, petColor, petStage.stage, petStage.scale])
 
   useEffect(() => {
     if (!skin || !petRef.current || !spriteRef.current || !particleRef.current) return

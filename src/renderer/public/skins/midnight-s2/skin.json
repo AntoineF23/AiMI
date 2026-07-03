@@ -1,0 +1,212 @@
+{
+  "name": "Midnight unicorn (stage 2)",
+  "version": 3,
+  "frameSize": 32,
+  "palette": {
+    "outline": "#15102a",
+    "coat": "#454063",
+    "shade": "#332f4c",
+    "mane": "#b8c4e8",
+    "maneShade": "#8f9fc9",
+    "hoof": "#3a3a4a",
+    "hoofGold": "#d9a83f",
+    "eye": "#efeaff",
+    "muzzle": "#8f8fb0",
+    "earInner": "#332f4c",
+    "horn1": "#8f9fc9",
+    "horn2": "#a8b4dd",
+    "horn3": "#b8c4e8",
+    "horn4": "#d8dff5",
+    "hornTip": "#ffffff"
+  },
+  "animations": {
+    "idle": {
+      "file": "idle.png",
+      "frames": 6,
+      "fps": 4,
+      "loop": true,
+      "headDy": [
+        -4,
+        -4,
+        -3,
+        -3,
+        -4,
+        -4
+      ],
+      "headDx": [
+        8,
+        8,
+        8,
+        8,
+        8,
+        8
+      ]
+    },
+    "walk": {
+      "file": "walk.png",
+      "frames": 6,
+      "fps": 8,
+      "loop": true,
+      "headDy": [
+        -4,
+        -5,
+        -4,
+        -4,
+        -5,
+        -4
+      ],
+      "headDx": [
+        8,
+        8,
+        8,
+        8,
+        8,
+        8
+      ]
+    },
+    "run": {
+      "file": "run.png",
+      "frames": 4,
+      "fps": 12,
+      "loop": true,
+      "headDy": [
+        -5,
+        -7,
+        -8,
+        -4
+      ],
+      "headDx": [
+        8,
+        8,
+        8,
+        8
+      ]
+    },
+    "sleep": {
+      "file": "sleep.png",
+      "frames": 4,
+      "fps": 2,
+      "loop": true,
+      "headDy": [
+        2,
+        3,
+        3,
+        2
+      ],
+      "headDx": [
+        8,
+        8,
+        8,
+        8
+      ]
+    },
+    "happy": {
+      "file": "happy.png",
+      "frames": 6,
+      "fps": 10,
+      "loop": false,
+      "headDy": [
+        -3,
+        -7,
+        -9,
+        -9,
+        -6,
+        -4
+      ],
+      "headDx": [
+        8,
+        8,
+        8,
+        8,
+        8,
+        8
+      ]
+    },
+    "eat": {
+      "file": "eat.png",
+      "frames": 6,
+      "fps": 6,
+      "loop": false,
+      "headDy": [
+        2,
+        8,
+        8,
+        8,
+        8,
+        2
+      ],
+      "headDx": [
+        10,
+        11,
+        12,
+        11,
+        12,
+        10
+      ]
+    },
+    "think": {
+      "file": "think.png",
+      "frames": 4,
+      "fps": 4,
+      "loop": true,
+      "headDy": [
+        -5,
+        -5,
+        -5,
+        -5
+      ],
+      "headDx": [
+        8,
+        8,
+        8,
+        8
+      ]
+    },
+    "wave": {
+      "file": "wave.png",
+      "frames": 4,
+      "fps": 8,
+      "loop": true,
+      "headDy": [
+        -5,
+        -5,
+        -5,
+        -5
+      ],
+      "headDx": [
+        8,
+        8,
+        8,
+        8
+      ]
+    },
+    "drag": {
+      "file": "drag.png",
+      "frames": 2,
+      "fps": 4,
+      "loop": true,
+      "headDy": [
+        -4,
+        -3
+      ],
+      "headDx": [
+        8,
+        8
+      ]
+    },
+    "land": {
+      "file": "land.png",
+      "frames": 2,
+      "fps": 12,
+      "loop": false,
+      "headDy": [
+        -3,
+        -4
+      ],
+      "headDx": [
+        8,
+        8
+      ]
+    }
+  }
+}
