@@ -19,6 +19,12 @@ const api = {
   quitApp(): void {
     ipcRenderer.send('app:quit')
   },
+  getOpenAtLogin(): Promise<boolean> {
+    return ipcRenderer.invoke('app:get-login-item')
+  },
+  setOpenAtLogin(enable: boolean): Promise<boolean> {
+    return ipcRenderer.invoke('app:set-login-item', enable)
+  },
   memory: {
     facts(): Promise<{ id: number; content: string; category: string; source: string; created_at: string }[]> {
       return ipcRenderer.invoke('memory:facts')

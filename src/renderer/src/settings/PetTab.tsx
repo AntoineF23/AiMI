@@ -6,6 +6,7 @@ export function PetTab() {
   const [saved, setSaved] = useState(false)
   const [allowScreenshots, setAllowScreenshots] = useState(true)
   const [shareActiveApp, setShareActiveApp] = useState(false)
+  const [openAtLogin, setOpenAtLogin] = useState(false)
 
   useEffect(() => {
     window.aimi.loadState().then((s) => {
@@ -16,6 +17,7 @@ export function PetTab() {
       setAllowScreenshots(s.allowScreenshots)
       setShareActiveApp(s.shareActiveApp)
     })
+    window.aimi.getOpenAtLogin().then(setOpenAtLogin)
   }, [])
 
   return (
@@ -85,6 +87,19 @@ export function PetTab() {
           PEEKS SEND ONE SCREENSHOT TO YOUR AI PROVIDER, ONLY WHEN YOU SAY YES, AND ARE NEVER SAVED. ACTIVE APP
           SHARING LETS YOUR PET KNOW WHICH APP IS IN FRONT SO IT CAN CHEER YOU ON.
         </div>
+      </section>
+
+      <section>
+        <h2>STARTUP</h2>
+        <button
+          className="ghost"
+          onClick={async () => {
+            const next = await window.aimi.setOpenAtLogin(!openAtLogin)
+            setOpenAtLogin(next)
+          }}
+        >
+          {openAtLogin ? 'OPEN AT LOGIN: ON — YOUR PET GREETS YOU EVERY MORNING' : 'OPEN AT LOGIN: OFF — TURN ON'}
+        </button>
       </section>
 
       <section>

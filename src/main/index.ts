@@ -103,6 +103,11 @@ app.whenReady().then(() => {
   )
 
   ipcMain.on('app:quit', () => app.quit())
+  ipcMain.handle('app:get-login-item', () => app.getLoginItemSettings().openAtLogin)
+  ipcMain.handle('app:set-login-item', (_e, enable: boolean) => {
+    app.setLoginItemSettings({ openAtLogin: !!enable })
+    return app.getLoginItemSettings().openAtLogin
+  })
 
     registerStoreIpc()
   registerAiIpc(() => petWindow)
