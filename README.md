@@ -1,63 +1,79 @@
-# AiMI — your pixel pet, powered by any AI
+<p align="center">
+  <img src="docs/img/hero.png" width="640" alt="The eight unicorn coats" />
+</p>
 
-A tiny pixel-art unicorn that lives on top of your screen. It wanders along the bottom of your desktop, naps, does zoomies, asks what you're up to, learns about you over time — and turns your day into a gentle little game.
+<h1 align="center">AiMI — your very own pixel unicorn</h1>
 
-**Zero pressure by design.** Nothing decays, nothing dies, nothing guilts you. Every interaction only *adds*: XP for everything, confetti level-ups, surprise gifts, rare stickers, evolutions. Ignore it for a week — it greets you back with a present.
+<p align="center"><b>Who has never wanted to pet a unicorn? Now it's possible — and it's all yours!</b></p>
 
-## Features
+A tiny unicorn hatches on your screen and just... lives there. It trots along the bottom of your desktop while you work, naps in the afternoon, does sudden zoomies, asks what you're up to, remembers your stories, and grows up by your side — from a wobbly little foal all the way to a legendary unicorn.
 
-- **A living pet** — walks, sleeps at night, blinks, does zoomies; drag it around, throw it, it bounces. Click it for treats, pets, games and chat.
-- **Any AI brain (bring your own)** — Anthropic, OpenAI, Google, Mistral, any OpenAI-compatible endpoint (OpenRouter, LM Studio...), or **Ollama for a free, 100% local brain**. One toggle in Settings.
-- **It learns about you** — chats are remembered in a local SQLite database, periodically consolidated into a profile. See and delete everything it knows in Settings → Memory.
-- **It can (politely) look at your screen** — only when you say yes, only one downscaled screenshot, sent straight to your chosen provider and never stored.
-- **Web-aware** — paste a YouTube link or article, it fetches the title and chats about it. No search API key needed.
-- **Super gamified** — XP toasts, level-ups, coins, sticker album (21 to collect, 5 rarity tiers), daily gifts, streaks that never punish, three minigames (Catch the Treat, Pong vs Pet, Tic Tac Paw), hats to unlock, and evolutions: hatchling → kiddo → chonk.
-- **Born, not chosen** — every egg hatches into a randomly rolled coat color (8 colors, rarity-weighted — Midnight is legendary). The color is forever. Your unicorn grows from foal to yearling to unicorn to legendary as it levels.
-- **100% pixel art** — every icon, sticker and panel is generated pixel art. No emoji were harmed.
-- **Private by default** — no account, no telemetry, no cloud. Your API key is stored encrypted (macOS Keychain-backed). Everything lives on your machine.
+**And it never, ever stresses you out.** Nothing decays, nothing dies, nothing guilt-trips. Ignore it for a week — it greets you back with a present. Everything you do together only adds: XP, level-ups with confetti, surprise gifts, rare stickers, hats, evolutions.
 
-## Install (macOS)
+## Which unicorn will you get?
 
-1. Grab the latest `.dmg` from [Releases](../../releases).
-2. Open it and drag **AiMI** to Applications.
-3. First launch: **right-click the app → Open** (the build is unsigned; macOS asks once).
-4. Hatch your egg, name your pet, optionally plug in a brain. Done — it lives in your menu bar (cat icon).
+Every egg hatches into a **random coat**. You can't pick it, you can't reroll it, you can't change it. That's destiny — and some destinies are rarer than others:
 
-### Give it a brain
+| | Coat | Rarity | Chance |
+|---|---|---|---|
+| <img src="docs/img/color-snow.png" width="72"/> | **Snow** | Common | ~25% |
+| <img src="docs/img/color-rose.png" width="72"/> | **Rose** | Common | ~25% |
+| <img src="docs/img/color-storm.png" width="72"/> | **Storm** | Common | ~25% |
+| <img src="docs/img/color-mint.png" width="72"/> | **Frost** | Uncommon | ~7.5% |
+| <img src="docs/img/color-ember.png" width="72"/> | **Ember** | Uncommon | ~7.5% |
+| <img src="docs/img/color-lilac.png" width="72"/> | **Lilac** | Uncommon | ~7.5% |
+| <img src="docs/img/color-gold.png" width="72"/> | **Golden** | Rare | ~3% |
+| <img src="docs/img/color-midnight.png" width="72"/> | **Midnight** | **Legendary** | ~1% |
 
-Any of these works, in Settings (tray icon → Settings… or click your pet → SETUP):
+## It grows up with you
 
-| Provider | What you need |
-|---|---|
-| **Ollama** (recommended to start) | Install [ollama.com](https://ollama.com), `ollama pull ministral-3:8b` — free, local, private. Vision models let your pet *see* your screen. |
-| Anthropic / OpenAI / Google / Mistral | An API key from their console |
-| Custom | Any OpenAI-compatible base URL (OpenRouter, LM Studio, llama.cpp, vLLM...) |
+Play together, chat, win minigames — everything earns XP, and your unicorn matures through four life stages. It literally gets bigger on your screen, its horn grows, its mane flows, and the legendary form walks on golden hooves:
 
-No brain? It's still a full virtual pet — the AI is a layer, never a requirement.
+<p align="center">
+  <img src="docs/img/growth.png" width="560" alt="Foal, Yearling, Unicorn, Legendary Unicorn" /><br/>
+  <sub>Foal (lv 1) → Yearling (lv 4) → Unicorn (lv 10) → Legendary Unicorn (lv 18)</sub>
+</p>
 
-## Development
+## What it does all day
 
-```bash
-npm install
-npm run sprites    # regenerate all pixel art (sprites, icons, app icon)
-npm run dev        # run with hot reload
-npm run dist       # build the .dmg
-```
+- **Lives on your screen** — wanders, naps at night, blinks, grazes when you feed it. Pick it up and throw it; it bounces (it's fine, it loves it).
+- **Talks with you** — give it a brain (any AI works, including a free one that runs on your Mac) and it chats in little pixel speech bubbles, asks about your day, and celebrates whatever you're doing.
+- **Remembers you** — tell it about your job, your dog, your projects... it keeps compact little memories and brings them up later. You can read and erase everything it knows, anytime.
+- **Can peek at your screen** — only when you say yes. Show it what you're working on and it reacts. Share a YouTube link and it knows what you're watching.
+- **Showers you with dopamine** — XP for everything, coins, a 21-sticker album with rarity tiers, daily gifts, streaks that never punish, three minigames (Catch the Treat, Pong vs Pet, Tic Tac Paw), and hats. Yes, hats.
 
-Electron + TypeScript + React. The pet is a deterministic local simulation (state machine + physics at 60fps) — the AI is an async brain on top, so the pet never freezes waiting for a model. Main-process modules: `ai/` (Vercel AI SDK provider registry), `brain/` (thought ticks + JSON actions), `memory/` (node:sqlite), `capture/`, `tools/`.
+## Tutorial — adopt yours in 2 minutes
 
-## Art
+**1. Install it**
+- Grab the `.dmg` from [Releases](../../releases) (`arm64` for Apple Silicon Macs, the other one for Intel).
+- Open it, drag **AiMI** into Applications.
+- First launch only: **right-click the app → Open** (it's an indie build, macOS asks once).
 
-Every sprite, icon and sticker is generated pixel art (`npm run sprites`). Coat palettes and growth-stage anatomy live in `scripts/generate-sprites.ts` — see [docs/SKINS.md](docs/SKINS.md) if you want to mod them.
+**2. Hatch your egg**
+- A wild egg appears! Name your unicorn and hit HATCH.
+- The dice roll your coat color. Screenshot the reveal — bragging rights if it's Midnight.
 
-## Privacy
+**3. Give it a brain (optional but magic)**
+- Click your unicorn → **SETUP** → pick a provider.
+- **Free & private**: install [Ollama](https://ollama.com), run `ollama pull ministral-3:8b`, pick "Ollama local" — everything stays on your Mac.
+- Or paste an API key from Anthropic, OpenAI, Google, Mistral, or any compatible service.
+- Hit **TEST CONNECTION**, then **SAVE**. No brain? It's still a full virtual pet.
 
-- API keys: encrypted via Electron `safeStorage`, never leave your machine except toward the provider you chose.
-- Memory: local SQLite file; inspect/delete per-fact or wipe everything in Settings → Memory.
-- Screenshots: opt-in per screenshot, downscaled, never written to disk.
-- Frontmost-app awareness: off by default.
-- Network traffic: your AI provider + any URL you explicitly share with the pet. That's it.
+**4. Play**
+- **Click your unicorn** for the menu: treat it, pet it, play games, chat, open the sticker album.
+- **Drag it** anywhere — it dangles, falls, bounces.
+- **Open gifts** when they appear. Answer its questions (it's how it learns about you — and you get XP).
+- Click anywhere else to tidy panels away. It sleeps when you work late. It's just... there with you.
 
-## License
+**5. Daily life**
+- The unicorn head in your **menu bar** has Show/Hide, Settings and Quit.
+- Settings → Pet: rename it, mute sounds, **open at login** (recommended — it greets you every morning), privacy toggles, and quit.
+- What it knows about you lives in Settings → Memory — read it, delete single memories, or wipe it all.
 
-[MIT](LICENSE) — the pet is yours now.
+## Your privacy, in plain words
+
+Everything lives on your Mac. No account, no telemetry, no cloud of ours. Your API key is stored encrypted. Screenshots happen only when you click yes, go straight to *your* chosen AI, and are never saved. The only network traffic is your unicorn talking to the brain you gave it.
+
+## For tinkerers
+
+Electron + TypeScript. `npm install && npm run dev` to hack, `npm run dist` to build, `npm run sprites` to regenerate every unicorn from code. Art system and modding notes in [docs/SKINS.md](docs/SKINS.md). License: [MIT](LICENSE) — the unicorn is yours now.
