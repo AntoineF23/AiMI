@@ -3,9 +3,21 @@ import { z } from 'zod'
 import type { ChatMessage } from '../../shared/ai'
 import { buildModel } from '../ai/registry'
 import { getResolvedSettings } from '../ai/settings'
-import { addFact, listFacts } from '../memory'
+import { addFact, listFacts, replaceAllFacts } from '../memory'
 
-const factsSchema = z.object({ facts: z.array(z.string().min(4).max(300)).max(3).default([]) })
+const COMPACT_ABOVE = 35
+const COMPACT_TARGET = 25
+
+// lenient: small models over-produce — clean and truncate instead of failing
+const factsSchema = z.object({ facts: z.array(z.string()).default([]) })
+
+function cleanFacts(raw: string[], max: number): string[] {
+  return raw
+    .map((f) => f.trim())
+    .filter((f) => f.length >= 4)
+    .map((f) => f.slice(0, 120))
+    .slice(0, max)
+}
 
 function extractJson(text: string): unknown {
   const start = text.indexOf('{')
@@ -44,9 +56,11 @@ export async function learnFromExchange(messages: ChatMessage[], reply: string):
     .join('\n')
 
   const prompt = [
-    `You maintain the long-term memory of a desktop pet about its human.`,
-    `From the exchange below, extract 0-3 NEW short standalone facts about the HUMAN worth remembering for weeks (name, job, projects, hobbies, likes/dislikes, habits, important people). Each fact must be a complete sentence understandable on its own.`,
-    `Do NOT include: things already in the known facts, small talk, one-off states ("is tired right now"), or anything about the pet itself. Only record what the human actually said — never invent, infer, or embellish details. If nothing qualifies, return an empty list.`,
+    `You maintain the long-term memory of a desktop pet about its human. Memory space is precious.`,
+    `From the exchange below, extract 0-3 NEW facts about the HUMAN worth keeping for weeks (name, job, projects, hobbies, likes/dislikes, important people).`,
+    `Format: ultra-compact telegraph notes, MAX 8 words each, lowercase, no subject pronoun (every fact is about the human), prefer "topic: value" style.`,
+    `Good: "job: product manager" / "loves padel" / "building a desktop pet app" / "cat named miso". Bad: "Antoine works as a product manager, leading teams to design products." (too long, redundant subject)`,
+    `Skip anything covered by the known facts even partially, small talk, temporary states, pet stuff. Never invent or embellish — only what the human actually said. Usually the right answer is an empty list.`,
     existing ? `Known facts:\n${existing}` : `Known facts: (none yet)`,
     `Exchange:\n${recent}\nPet: ${reply}`,
     `Reply with ONLY JSON, no markdown fences: {"facts": []}`
@@ -58,12 +72,48 @@ export async function learnFromExchange(messages: ChatMessage[], reply: string):
       prompt,
       abortSignal: AbortSignal.timeout(30_000)
     })
-    const parsed = factsSchema.parse(extractJson(result.text))
-    for (const fact of parsed.facts) addFact(fact, 'misc', 'chat', 0.75)
-    if (parsed.facts.length > 0) {
-      console.log(`learned ${parsed.facts.length} fact(s):`, parsed.facts)
+    const facts = cleanFacts(factsSchema.parse(extractJson(result.text)).facts, 3)
+    for (const fact of facts) addFact(fact, 'misc', 'chat', 0.75)
+    if (facts.length > 0) {
+      console.log(`learned ${facts.length} fact(s):`, facts)
     }
+    await compactFactsIfNeeded()
   } catch (err) {
     console.error('fact extraction failed:', err instanceof Error ? err.message : err)
+  }
+}
+
+/**
+ * When the fact list grows past the budget, one model call rewrites it into
+ * fewer, denser notes (merge related, drop trivial). Keeps memory lean forever.
+ */
+export async function compactFactsIfNeeded(force = false): Promise<void> {
+  const settings = getResolvedSettings()
+  if (!settings) return
+  const facts = listFacts()
+  if (!force && facts.length <= COMPACT_ABOVE) return
+
+  const prompt = [
+    `You optimize the long-term memory of a desktop pet about its human. Memory space is precious.`,
+    `Rewrite the fact list below into AT MOST ${COMPACT_TARGET} notes: merge related facts, drop trivial or outdated ones, remove redundancy.`,
+    `Format: ultra-compact telegraph notes, MAX 8 words each, lowercase, no subject pronoun, prefer "topic: value" (e.g. "job: product manager", "hobbies: padel, pixel art"). Keep every distinct piece of information — compress, don't forget.`,
+    `Facts:\n${facts.map((f) => `- ${f.content}`).join('\n')}`,
+    `Reply with ONLY JSON, no markdown fences: {"facts": []}`
+  ].join('\n\n')
+
+  try {
+    const result = await generateText({
+      model: buildModel(settings),
+      prompt,
+      abortSignal: AbortSignal.timeout(45_000)
+    })
+    const rewritten = cleanFacts(factsSchema.parse(extractJson(result.text)).facts, COMPACT_TARGET)
+    // never nuke memory on a degenerate answer
+    if (rewritten.length >= Math.min(5, facts.length)) {
+      replaceAllFacts(rewritten, 'compaction')
+      console.log(`memory compacted: ${facts.length} -> ${rewritten.length} facts`)
+    }
+  } catch (err) {
+    console.error('fact compaction failed:', err instanceof Error ? err.message : err)
   }
 }

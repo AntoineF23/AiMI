@@ -23,25 +23,65 @@ export function listFacts(): Fact[] {
   return getDb().prepare('SELECT * FROM facts ORDER BY updated_at DESC').all() as unknown as Fact[]
 }
 
+const STOPWORDS = new Set(['the', 'a', 'an', 'and', 'of', 'to', 'is', 'are', 'has', 'have', 'with', 'for', 'on', 'in', 'at', 'his', 'her', 'their', 'very', 'really'])
+
+function significantWords(s: string): Set<string> {
+  return new Set(
+    s
+      .toLowerCase()
+      .replace(/[^a-zà-ÿ0-9\s]/g, ' ')
+      .split(/\s+/)
+      .filter((w) => w.length > 2 && !STOPWORDS.has(w))
+  )
+}
+
+/** Containment-friendly overlap: 1.0 when one fact's words are a subset of the other's. */
+function similarity(a: Set<string>, b: Set<string>): number {
+  if (a.size === 0 || b.size === 0) return 0
+  let common = 0
+  for (const w of a) if (b.has(w)) common++
+  return common / Math.min(a.size, b.size)
+}
+
 export function addFact(content: string, category = 'misc', source = 'chat', confidence = 0.7): void {
-  const trimmed = content.trim()
+  const trimmed = content.trim().slice(0, 120)
   if (!trimmed) return
   const db = getDb()
-  // avoid near-duplicates: exact-content match refreshes instead of inserting
-  const existing = db.prepare('SELECT id FROM facts WHERE lower(content) = lower(?)').get(trimmed) as
-    | { id: number }
-    | undefined
-  if (existing) {
-    db.prepare("UPDATE facts SET confidence = min(1.0, confidence + 0.1), updated_at = datetime('now') WHERE id = ?").run(
-      existing.id
-    )
-  } else {
-    db.prepare('INSERT INTO facts (content, category, source, confidence) VALUES (?, ?, ?, ?)').run(
-      trimmed.slice(0, 300),
-      category,
-      source,
-      confidence
-    )
+  // near-duplicate detection: if an existing fact covers (or is covered by)
+  // this one, keep the SHORTER wording instead of piling up variants
+  const words = significantWords(trimmed)
+  for (const fact of listFacts()) {
+    if (similarity(words, significantWords(fact.content)) >= 0.6) {
+      const shorter = trimmed.length < fact.content.length ? trimmed : fact.content
+      db.prepare(
+        "UPDATE facts SET content = ?, confidence = min(1.0, confidence + 0.1), updated_at = datetime('now') WHERE id = ?"
+      ).run(shorter, fact.id)
+      return
+    }
+  }
+  db.prepare('INSERT INTO facts (content, category, source, confidence) VALUES (?, ?, ?, ?)').run(
+    trimmed,
+    category,
+    source,
+    confidence
+  )
+}
+
+/** Atomic rewrite used by memory compaction. */
+export function replaceAllFacts(contents: string[], source = 'compaction'): void {
+  const db = getDb()
+  db.exec('BEGIN')
+  try {
+    db.exec('DELETE FROM facts')
+    const stmt = db.prepare('INSERT INTO facts (content, category, source, confidence) VALUES (?, ?, ?, ?)')
+    for (const c of contents) {
+      const trimmed = c.trim().slice(0, 120)
+      if (trimmed) stmt.run(trimmed, 'misc', source, 0.8)
+    }
+    db.exec('COMMIT')
+  } catch (err) {
+    db.exec('ROLLBACK')
+    throw err
   }
 }
 

@@ -24,8 +24,8 @@ const CONSOLIDATE_THRESHOLD = 12
 
 const actionSchema = z.object({
   action: z.enum(['say', 'ask_user', 'ask_screenshot', 'idle']),
-  text: z.string().max(400).optional().default(''),
-  learn: z.array(z.string().max(300)).max(3).optional().default([])
+  text: z.string().optional().default(''),
+  learn: z.array(z.string()).optional().default([])
 })
 
 /** Frontmost app name via lsappinfo — no TCC permission needed (macOS only). */
@@ -99,11 +99,11 @@ async function think(win: BrowserWindow): Promise<void> {
       abortSignal: AbortSignal.timeout(30_000)
     })
     const parsed = actionSchema.parse(extractJson(result.text))
-    for (const fact of parsed.learn) addFact(fact, 'misc', 'brain')
+    for (const fact of parsed.learn.slice(0, 3)) addFact(fact, 'misc', 'brain')
     if (parsed.action !== 'idle' && parsed.text.trim()) {
-      recordEpisode('chat_pet', parsed.text)
+      recordEpisode('chat_pet', parsed.text.slice(0, 400))
       win.webContents.send('brain:say', {
-        text: parsed.text.trim(),
+        text: parsed.text.trim().slice(0, 400),
         kind: parsed.action === 'ask_screenshot' && prefs.allowScreenshots ? 'ask_screenshot' : parsed.action
       })
     }

@@ -39,6 +39,7 @@ export function ChatPanel({ anchor, pendingScreenshot, petName, level, streak, e
   const [draft, setDraft] = useState<string | null>(null) // streaming assistant text
   const [configured, setConfigured] = useState<boolean | null>(null)
   const requestRef = useRef<string | null>(null)
+  const draftRef = useRef('')
   const hadImageRef = useRef(false)
   const listRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -64,26 +65,28 @@ export function ChatPanel({ anchor, pendingScreenshot, petName, level, streak, e
   useEffect(() => {
     const offDelta = window.aimi.ai.onDelta((id, delta) => {
       if (id !== requestRef.current) return
-      setDraft((d) => (d ?? '') + delta)
+      draftRef.current += delta
+      setDraft(draftRef.current)
     })
     const offDone = window.aimi.ai.onDone((id, error) => {
       if (id !== requestRef.current) return
       requestRef.current = null
-      setDraft((finalDraft) => {
-        let text = finalDraft ?? ''
-        if (error === 'not-configured') {
-          text = "I don't have a brain yet! Open Setup and plug one in — Ollama is free! :3"
-        } else if (error && hadImageRef.current) {
-          text = "I tried SO hard to see it, but this model has no eyes (no vision support). Pick a vision-capable model in Setup and I'll peek! >_<"
-        } else if (error) {
-          text = `My brain fizzled (${error.slice(0, 80)}...). Maybe check Setup? >_<`
-        }
-        if (text) {
-          sessionMessages = [...sessionMessages, { role: 'assistant', content: text }]
-          setMessages(sessionMessages)
-        }
-        return null
-      })
+      // finalize OUTSIDE any state updater: updaters must stay pure or
+      // StrictMode's double-invoke duplicates the message
+      let text = draftRef.current
+      draftRef.current = ''
+      if (error === 'not-configured') {
+        text = "I don't have a brain yet! Open Setup and plug one in — Ollama is free! :3"
+      } else if (error && hadImageRef.current) {
+        text = "I tried SO hard to see it, but this model has no eyes (no vision support). Pick a vision-capable model in Setup and I'll peek! >_<"
+      } else if (error) {
+        text = `My brain fizzled (${error.slice(0, 80)}...). Maybe check Setup? >_<`
+      }
+      if (text) {
+        sessionMessages = [...sessionMessages, { role: 'assistant', content: text }]
+        setMessages(sessionMessages)
+      }
+      setDraft(null)
       engine?.playAction('happy', 0.6)
       sfx.pop()
     })
@@ -116,6 +119,7 @@ export function ChatPanel({ anchor, pendingScreenshot, petName, level, streak, e
     const id = crypto.randomUUID()
     requestRef.current = id
     hadImageRef.current = !!screenshot
+    draftRef.current = ''
     setDraft('')
     engine?.playAction('think', 30)
     window.aimi.ai.chat(id, sessionMessages, { petName, level, streak }, screenshot)
