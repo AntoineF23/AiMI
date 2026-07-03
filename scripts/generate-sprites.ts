@@ -457,15 +457,16 @@ function drawLying(g: Grid, cfg: StageCfg, p: UPose): void {
   g.fillRect(small ? 17 : 18, 24, 2, 2, cfg.hoofKey)
 
   const hx = small ? 19 : 21
-  const hy = (small ? 15 : 14) + dy
-  g.fillRect(hx - 2, hy + 3, 4, 4, 'coat')
+  const hy = (small ? 14 : 13) + dy
+  g.fillRect(hx - 2, hy + 3, 4, 5, 'coat')
   g.fillRect(hx, hy, 5, 5, 'coat')
   g.fillRect(hx + 4, hy + 2, 3, 3, 'coat')
   g.set(hx + 6, hy + 3, 'muzzle')
 
   g.fillRect(hx - 1, hy - 2, 2, 2, 'coat')
   g.set(hx - 1, hy - 1, 'earInner')
-  drawHornAndMane(g, cfg, hx, hy, hx - 2, hy + 4, 0)
+  // the horn stays proudly visible even asleep — never fewer than 2 bands
+  drawHornAndMane(g, { ...cfg, hornBands: Math.max(2, cfg.hornBands) }, hx, hy, hx - 2, hy + 4, 0)
 
   g.set(hx + 3, hy + 2, 'eye')
   g.outline()
