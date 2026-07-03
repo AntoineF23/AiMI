@@ -5,10 +5,10 @@
   "main": "./out/main/index.js",
   "author": "Antoine Fornas",
   "license": "MIT",
-  "homepage": "https://github.com/antoinefornas/AiMI",
+  "homepage": "https://github.com/AntoineF23/AiMI",
   "repository": {
     "type": "git",
-    "url": "https://github.com/antoinefornas/AiMI.git"
+    "url": "https://github.com/AntoineF23/AiMI.git"
   },
   "scripts": {
     "dev": "electron-vite dev",
