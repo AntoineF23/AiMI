@@ -49,6 +49,19 @@ const api = {
       const listener = (_e: unknown, muted: boolean) => cb(muted)
       ipcRenderer.on('pet:muted', listener)
       return () => ipcRenderer.removeListener('pet:muted', listener)
+    },
+    setSkin(skinId: string): void {
+      ipcRenderer.send('pet:set-skin', skinId)
+    },
+    onSkinChanged(cb: (skinId: string) => void): () => void {
+      const listener = (_e: unknown, skinId: string) => cb(skinId)
+      ipcRenderer.on('pet:skin', listener)
+      return () => ipcRenderer.removeListener('pet:skin', listener)
+    }
+  },
+  skins: {
+    list(): Promise<{ id: string; label: string }[]> {
+      return ipcRenderer.invoke('skins:list')
     }
   },
   onBrainSay(cb: (text: string, kind: 'say' | 'ask_user' | 'ask_screenshot') => void): () => void {

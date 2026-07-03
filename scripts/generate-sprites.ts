@@ -34,6 +34,34 @@ const PALETTE = {
 } as const
 
 type ColorKey = keyof typeof PALETTE
+type Palette = Record<ColorKey, string>
+
+/** Bundled palette-swap skins — same art, new fur. */
+const SKINS: Record<string, { title: string; palette: Palette }> = {
+  default: { title: 'AiMI Classic', palette: { ...PALETTE } },
+  mint: {
+    title: 'Minty',
+    palette: {
+      ...PALETTE,
+      body: '#5eead4',
+      shade: '#2dd4bf',
+      belly: '#ecfdf5',
+      earInner: '#fda4af',
+      blush: '#fb7185'
+    }
+  },
+  peach: {
+    title: 'Peachy',
+    palette: {
+      ...PALETTE,
+      body: '#fdba74',
+      shade: '#fb923c',
+      belly: '#fff7ed',
+      earInner: '#f9a8d4',
+      blush: '#f472b6'
+    }
+  }
+}
 
 function hexToRgba(hex: string): [number, number, number, number] {
   const n = parseInt(hex.slice(1), 16)
@@ -124,7 +152,8 @@ interface FrameParams {
   earLift?: number
 }
 
-function drawCat(g: Grid, p: FrameParams) {
+/** Draws one frame; returns the ear-top Y so hats can track the head. */
+function drawCat(g: Grid, p: FrameParams): number {
   const dy = p.dy ?? 0
   const squash = p.squash ?? 0
   const lying = p.lying ?? false
@@ -264,6 +293,7 @@ function drawCat(g: Grid, p: FrameParams) {
   }
 
   g.outline()
+  return earTopY
 }
 
 // ---------------------------------------------------------------------------
@@ -387,7 +417,7 @@ const ANIMATIONS: Record<string, AnimDef> = {
 // PNG helpers
 // ---------------------------------------------------------------------------
 
-function gridToPng(grids: Grid[], scale = 1): PNG {
+function gridToPng(grids: Grid[], scale = 1, palette: Palette = PALETTE): PNG {
   const w = grids.reduce((s, g) => s + g.w, 0) * scale
   const h = Math.max(...grids.map((g) => g.h)) * scale
   const png = new PNG({ width: w, height: h })
@@ -397,7 +427,7 @@ function gridToPng(grids: Grid[], scale = 1): PNG {
       for (let x = 0; x < g.w; x++) {
         const key = g.get(x, y)
         if (!key) continue
-        const [r, gg, b, a] = hexToRgba(PALETTE[key])
+        const [r, gg, b, a] = hexToRgba(palette[key])
         for (let sy = 0; sy < scale; sy++) {
           for (let sx = 0; sx < scale; sx++) {
             const idx = (((y * scale + sy) * w + xOff + x * scale + sx) << 2)
@@ -460,38 +490,54 @@ function drawTrayIcon(size: 16 | 32): PNG {
 // Main
 // ---------------------------------------------------------------------------
 
-const skinDir = join(ROOT, 'src/renderer/public/skins/default')
 const resourcesDir = join(ROOT, 'resources')
-mkdirSync(skinDir, { recursive: true })
 mkdirSync(resourcesDir, { recursive: true })
 
-const manifest: {
-  name: string
-  version: number
-  frameSize: number
-  palette: Record<string, string>
-  animations: Record<string, { file: string; frames: number; fps: number; loop: boolean }>
-} = {
-  name: 'AiMI Classic',
-  version: 1,
-  frameSize: SIZE,
-  palette: { ...PALETTE },
-  animations: {}
-}
-
+// render all frames once (palette applied at write time)
 const allGrids: Record<string, Grid[]> = {}
+const allHeadDy: Record<string, number[]> = {}
+const BASE_EAR_TOP = 9
 for (const [name, def] of Object.entries(ANIMATIONS)) {
-  const grids = def.frames.map((params) => {
+  const grids: Grid[] = []
+  const headDy: number[] = []
+  for (const params of def.frames) {
     const g = new Grid(SIZE, SIZE)
-    drawCat(g, params)
-    return g
-  })
+    headDy.push(drawCat(g, params) - BASE_EAR_TOP)
+    grids.push(g)
+  }
   allGrids[name] = grids
-  writeFileSync(join(skinDir, `${name}.png`), PNG.sync.write(gridToPng(grids)))
-  manifest.animations[name] = { file: `${name}.png`, frames: def.frames.length, fps: def.fps, loop: def.loop }
+  allHeadDy[name] = headDy
 }
 
-writeFileSync(join(skinDir, 'skin.json'), JSON.stringify(manifest, null, 2))
+for (const [skinName, skin] of Object.entries(SKINS)) {
+  const skinDir = join(ROOT, 'src/renderer/public/skins', skinName)
+  mkdirSync(skinDir, { recursive: true })
+  const manifest: {
+    name: string
+    version: number
+    frameSize: number
+    palette: Record<string, string>
+    animations: Record<string, { file: string; frames: number; fps: number; loop: boolean; headDy: number[] }>
+  } = {
+    name: skin.title,
+    version: 1,
+    frameSize: SIZE,
+    palette: { ...skin.palette },
+    animations: {}
+  }
+  for (const [name, def] of Object.entries(ANIMATIONS)) {
+    writeFileSync(join(skinDir, `${name}.png`), PNG.sync.write(gridToPng(allGrids[name], 1, skin.palette)))
+    manifest.animations[name] = {
+      file: `${name}.png`,
+      frames: def.frames.length,
+      fps: def.fps,
+      loop: def.loop,
+      headDy: allHeadDy[name]
+    }
+  }
+  writeFileSync(join(skinDir, 'skin.json'), JSON.stringify(manifest, null, 2))
+}
+
 writeFileSync(join(resourcesDir, 'trayTemplate.png'), PNG.sync.write(drawTrayIcon(16)))
 writeFileSync(join(resourcesDir, 'trayTemplate@2x.png'), PNG.sync.write(drawTrayIcon(32)))
 
@@ -511,5 +557,5 @@ if (previewFlag !== -1) {
   console.log(`preview written to ${join(outDir, 'preview.png')}`)
 }
 
-console.log(`✔ skin written to ${skinDir} (${Object.keys(ANIMATIONS).length} animations)`)
+console.log(`✔ skins written: ${Object.keys(SKINS).join(', ')} (${Object.keys(ANIMATIONS).length} animations each)`)
 console.log(`✔ tray icons written to ${resourcesDir}`)

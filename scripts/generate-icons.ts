@@ -631,6 +631,79 @@ oWWWoKKoBWWWo
 ...Wo
 ..Wo
 .oWWWWo`)
+  },
+  trophy: {
+    palette: { Y: '#ffd75e', O: '#ff9d3f', D: '#b8863c' },
+    rows: grid(`
+.
+..ooooooooooo
+.oYYYYYYYYYYYo
+ooYYYYYYYYYYYoo
+oYoYYYYYYYYYoYo
+oYoYYYYYYYYYoYo
+.ooYYYYYYYYYoo
+...oYYYYYYYo
+....oYYYYYo
+.....oYYYo
+......oYo
+.....oYYYo
+....oYOOYYo
+...oOOOOOOOo
+...ooooooooo`)
+  }
+}
+
+/**
+ * Hat overlays: 32x32, drawn in the same coordinate space as the pet sprite
+ * (ears apex at x=11/x=21, ear top at y=9). The renderer shifts them per frame
+ * using the skin manifest's headDy so they bounce with the cat.
+ */
+const HATS: Record<string, IconDef> = {
+  'hat-party': {
+    palette: { P: '#a78bfa', S: '#ff9ecf', M: '#ffd75e' },
+    rows: grid(`
+..............oo
+.............oMMo
+.............oMMo
+.............oSSo
+............oSSSSo
+............oPPPPo
+...........oPPPPPPo
+..........oSSSSSSSSo
+..........oPPPPPPPPo
+.........oPPPPPPPPPPo
+.........oooooooooooo`)
+  },
+  'hat-bow': {
+    palette: { B: '#ff9ecf', D: '#fb7185' },
+    rows: grid(`
+.
+.
+.
+.
+.........oo........oo
+........oBBoo....ooBBo
+.......oBBBBBooooBBBBBo
+.......oBBBBBoDDoBBBBBo
+.......oBBBBoDDDDoBBBBo
+........oBBBoDDDDoBBBo
+.........ooBBooooBBoo
+...........oo....oo`)
+  },
+  'hat-crown': {
+    palette: { Y: '#ffd75e', O: '#ff9d3f', R: '#ff5c8a' },
+    rows: grid(`
+.
+.
+.
+.........o....o....o
+........oYo..oYo..oYo
+........oYYooYYYooYYo
+........oYYYYYYYYYYYo
+........oYYYYRRYYYYYo
+........oYOYYRRYYOYYo
+........oYOOYYYYYOOYo
+........ooooooooooooo`)
   }
 }
 
@@ -639,18 +712,18 @@ function hexToRgba(hex: string): [number, number, number, number] {
   return [(n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff, 255]
 }
 
-function renderIcon(name: string, def: IconDef): PNG {
-  const png = new PNG({ width: SIZE, height: SIZE })
+function renderIcon(name: string, def: IconDef, size = SIZE): PNG {
+  const png = new PNG({ width: size, height: size })
   def.rows.forEach((row, y) => {
-    if (row.length > SIZE) throw new Error(`icon "${name}" row ${y} is ${row.length} chars (max ${SIZE})`)
-    if (y >= SIZE) throw new Error(`icon "${name}" has more than ${SIZE} rows`)
+    if (row.length > size) throw new Error(`icon "${name}" row ${y} is ${row.length} chars (max ${size})`)
+    if (y >= size) throw new Error(`icon "${name}" has more than ${size} rows`)
     for (let x = 0; x < row.length; x++) {
       const ch = row[x]
       if (ch === '.') continue
       const hex = ch === 'o' ? OUTLINE : def.palette[ch]
       if (!hex) throw new Error(`icon "${name}": unknown palette char "${ch}" at ${x},${y}`)
       const [r, g, b, a] = hexToRgba(hex)
-      const idx = (y * SIZE + x) << 2
+      const idx = (y * size + x) << 2
       png.data[idx] = r
       png.data[idx + 1] = g
       png.data[idx + 2] = b
@@ -665,7 +738,10 @@ mkdirSync(outDir, { recursive: true })
 for (const [name, def] of Object.entries(ICONS)) {
   writeFileSync(join(outDir, `${name}.png`), PNG.sync.write(renderIcon(name, def)))
 }
-console.log(`✔ ${Object.keys(ICONS).length} pixel icons written to ${outDir}`)
+for (const [name, def] of Object.entries(HATS)) {
+  writeFileSync(join(outDir, `${name}.png`), PNG.sync.write(renderIcon(name, def, 32)))
+}
+console.log(`✔ ${Object.keys(ICONS).length} icons + ${Object.keys(HATS).length} hats written to ${outDir}`)
 
 const previewFlag = process.argv.indexOf('--preview')
 if (previewFlag !== -1) {

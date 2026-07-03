@@ -1,14 +1,14 @@
 {
-  "name": "AiMI Classic",
+  "name": "Minty",
   "version": 1,
   "frameSize": 32,
   "palette": {
     "outline": "#241a3d",
-    "body": "#a78bfa",
-    "shade": "#8a68f5",
-    "belly": "#eae2ff",
-    "earInner": "#ff9ecf",
-    "blush": "#ff8fb8",
+    "body": "#5eead4",
+    "shade": "#2dd4bf",
+    "belly": "#ecfdf5",
+    "earInner": "#fda4af",
+    "blush": "#fb7185",
     "eye": "#241a3d",
     "shine": "#ffffff",
     "mouth": "#5c3a6e"

@@ -1,14 +1,14 @@
 {
-  "name": "AiMI Classic",
+  "name": "Peachy",
   "version": 1,
   "frameSize": 32,
   "palette": {
     "outline": "#241a3d",
-    "body": "#a78bfa",
-    "shade": "#8a68f5",
-    "belly": "#eae2ff",
-    "earInner": "#ff9ecf",
-    "blush": "#ff8fb8",
+    "body": "#fdba74",
+    "shade": "#fb923c",
+    "belly": "#fff7ed",
+    "earInner": "#f9a8d4",
+    "blush": "#f472b6",
     "eye": "#241a3d",
     "shine": "#ffffff",
     "mouth": "#5c3a6e"

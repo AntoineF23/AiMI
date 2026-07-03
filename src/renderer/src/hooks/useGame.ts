@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { GameState, Rarity, StickerDef } from '../../../shared/types'
+import { stageForLevel, type GameState, type Rarity, type StickerDef } from '../../../shared/types'
 import { levelFromXp } from '../game/xp'
+import type { GameId } from '../games/GamesMenu'
 import { rollDrop, XP_REWARDS, TREAT_ICONS } from '../game/rewards'
 import { setMuted, sfx } from '../game/sound'
 import type { PetEngine } from '../pet/engine'
@@ -38,6 +39,9 @@ export interface UiState {
   album: boolean
   chat: { anchor: Anchor; screenshot?: string } | null
   gift: { kind: 'daily' | 'surprise'; x: number } | null
+  games: boolean
+  activeGame: GameId | null
+  evolution: { name: string } | null
 }
 
 const dayString = (d = new Date()) => d.toISOString().slice(0, 10)
@@ -57,7 +61,10 @@ export function useGame(
     levelUp: null,
     album: false,
     chat: null,
-    gift: null
+    gift: null,
+    games: false,
+    activeGame: null,
+    evolution: null
   })
   const stateRef = useRef(state)
   stateRef.current = state
@@ -118,6 +125,20 @@ export function useGame(
           setUi((u) => ({ ...u, levelUp: { level: after, coins: coinBonus } }))
           setTimeout(() => setUi((u) => ({ ...u, levelUp: null })), 3200)
         }, 350)
+        // evolution: the pet grows at stage boundaries
+        const fromStage = stageForLevel(before)
+        const toStage = stageForLevel(after)
+        if (toStage.stage > fromStage.stage) {
+          setTimeout(() => {
+            sfx.levelUp()
+            engineRef.current?.setScale(toStage.scale)
+            const a = anchor()
+            particlesRef.current?.emitConfetti(a.x, a.y, 140)
+            particlesRef.current?.emitSparkles(a.x, a.y - 40, 20)
+            setUi((u) => ({ ...u, evolution: { name: toStage.name } }))
+            setTimeout(() => setUi((u) => ({ ...u, evolution: null })), 4000)
+          }, 3600)
+        }
       } else {
         setState({ ...s, totalXp: s.totalXp + amount })
       }
@@ -204,15 +225,72 @@ export function useGame(
     handleDrop(rollDrop(s.stickers, 0.08), 1000)
   }, [addXp, anchor, closeMenu, engineRef, handleDrop, particlesRef])
 
-  const playTogether = useCallback(() => {
+  const openGames = useCallback(() => {
+    closeMenu()
+    engineRef.current?.hold()
+    setUi((u) => ({ ...u, games: true }))
+  }, [closeMenu, engineRef])
+
+  const closeGames = useCallback(() => {
+    setUi((u) => ({ ...u, games: false, activeGame: null }))
+    engineRef.current?.release()
+  }, [engineRef])
+
+  const startGame = useCallback((id: GameId) => {
+    sfx.pop()
+    setUi((u) => ({ ...u, games: false, activeGame: id }))
+  }, [])
+
+  const finishGame = useCallback(
+    (id: GameId, score: number, max: number) => {
+      const s = stateRef.current
+      if (!s) return
+      setUi((u) => ({ ...u, activeGame: null }))
+      engineRef.current?.release()
+      engineRef.current?.celebrate()
+      const prevBest = s.bestScores?.[id]
+      const isBest = prevBest === undefined || score > prevBest
+      const ratio = Math.max(0, Math.min(1, score / max))
+      const xp = 12 + Math.round(38 * ratio)
+      if (isBest) {
+        setState({ ...s, bestScores: { ...s.bestScores, [id]: score } })
+        pushToast('NEW BEST!', anchor(), 'trophy')
+        sfx.reward('rare')
+      } else {
+        pushToast(ratio >= 0.6 ? 'GREAT RUN!' : 'SO CLOSE!!')
+      }
+      setTimeout(() => addXp(xp), 600)
+      handleDrop(rollDrop(s.stickers, isBest ? 0.7 : 0.3, 1.4), 1400)
+    },
+    [addXp, anchor, engineRef, handleDrop, pushToast]
+  )
+
+  const zoomies = useCallback(() => {
     const s = stateRef.current
     if (!s) return
-    closeMenu()
+    closeGames()
     engineRef.current?.celebrate()
     setTimeout(() => addXp(XP_REWARDS.play()), 400)
     handleDrop(rollDrop(s.stickers, 0.15), 1000)
     pushToast('ZOOMIES!!')
-  }, [addXp, closeMenu, engineRef, handleDrop, pushToast])
+  }, [addXp, closeGames, engineRef, handleDrop, pushToast])
+
+  /** Called after the renderer applied a new skin (persists the choice). */
+  const skinChanged = useCallback((id: string) => {
+    const s = stateRef.current
+    if (s && s.skin !== id) setState({ ...s, skin: id })
+  }, [])
+
+  const setAccessory = useCallback(
+    (id: string | null) => {
+      const s = stateRef.current
+      if (!s) return
+      sfx.pop()
+      engineRef.current?.setAccessory(id)
+      setState({ ...s, accessory: id ?? '' })
+    },
+    [engineRef]
+  )
 
   const openChat = useCallback(() => {
     closeMenu()
@@ -378,7 +456,13 @@ export function useGame(
       closeMenu,
       feedTreat,
       petPet,
-      playTogether,
+      openGames,
+      closeGames,
+      startGame,
+      finishGame,
+      zoomies,
+      setAccessory,
+      skinChanged,
       openChat,
       closeChat,
       chatMessageSent,

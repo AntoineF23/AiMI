@@ -9,7 +9,16 @@ import { Album } from './ui/Album'
 import { Toasts, RewardPopup, LevelUpBanner, Bubble, GiftBox } from './ui/Overlays'
 import { ChatPanel } from './ui/ChatPanel'
 import { Onboarding } from './ui/Onboarding'
+import { GamesMenu } from './games/GamesMenu'
+import { CatchGame } from './games/CatchGame'
+import { PongGame } from './games/PongGame'
+import { TttGame } from './games/TttGame'
 import { levelFromXp } from './game/xp'
+import { BUILTIN_SKINS, stageForLevel } from '../../shared/types'
+
+export function skinBaseUrl(id: string): string {
+  return BUILTIN_SKINS.some((s) => s.id === id) ? `./skins/${id}` : `aimi-skin://${id}`
+}
 
 export function PetApp() {
   const petRef = useRef<HTMLDivElement>(null)
@@ -25,14 +34,37 @@ export function PetApp() {
 
   useEffect(() => initInteractivity(), [])
 
+  // load the skin the pet was wearing (fall back to default art)
+  const stateLoaded = game.state !== null
   useEffect(() => {
-    loadSkin().then(setSkin).catch(console.error)
+    if (!gameRef.current.state) return
+    const id = gameRef.current.state.skin || 'default'
+    loadSkin(skinBaseUrl(id))
+      .then(setSkin)
+      .catch(() => loadSkin('./skins/default').then(setSkin).catch(console.error))
+  }, [stateLoaded])
+
+  // live skin switching from the settings window
+  useEffect(() => {
+    return window.aimi.pet.onSkinChanged((id) => {
+      loadSkin(skinBaseUrl(id))
+        .then((s) => {
+          engineRef.current?.setSkin(s)
+          setSkin(s)
+          gameRef.current.actions.skinChanged(id)
+        })
+        .catch(console.error)
+    })
   }, [])
 
   useEffect(() => {
     if (!skin || !petRef.current || !spriteRef.current || !particleRef.current) return
+    if (engineRef.current) return // skin swaps go through engine.setSkin
     const particles = new ParticleSystem(particleRef.current)
-    const engine = new PetEngine(petRef.current, spriteRef.current, skin, particles)
+    const state = gameRef.current.state
+    const scale = stageForLevel(levelFromXp(state?.totalXp ?? 0)).scale
+    const engine = new PetEngine(petRef.current, spriteRef.current, skin, particles, scale)
+    if (state?.accessory) engine.setAccessory(state.accessory)
     engine.onPetClicked = () => gameRef.current.actions.onPetClicked()
     engine.start()
     engineRef.current = engine
@@ -69,7 +101,7 @@ export function PetApp() {
           state={state}
           onTreat={actions.feedTreat}
           onPet={actions.petPet}
-          onPlay={actions.playTogether}
+          onPlay={actions.openGames}
           onTalk={actions.openChat}
           onAlbum={actions.openAlbum}
           onClose={actions.closeMenu}
@@ -90,6 +122,32 @@ export function PetApp() {
       {ui.popups.length > 0 && <RewardPopup popup={ui.popups[0]} />}
       {ui.levelUp && <LevelUpBanner level={ui.levelUp.level} coins={ui.levelUp.coins} />}
       {ui.album && state && <Album state={state} onClose={actions.closeAlbum} />}
+      {ui.games && state && (
+        <GamesMenu
+          state={state}
+          onStart={actions.startGame}
+          onZoomies={actions.zoomies}
+          onHat={actions.setAccessory}
+          onClose={actions.closeGames}
+        />
+      )}
+      {ui.activeGame === 'catch' && skin && (
+        <CatchGame skin={skin} onEnd={(s, m) => actions.finishGame('catch', s, m)} onClose={actions.closeGames} />
+      )}
+      {ui.activeGame === 'pong' && skin && (
+        <PongGame skin={skin} onEnd={(s, m) => actions.finishGame('pong', s, m)} onClose={actions.closeGames} />
+      )}
+      {ui.activeGame === 'ttt' && (
+        <TttGame onEnd={(s, m) => actions.finishGame('ttt', s, m)} onClose={actions.closeGames} />
+      )}
+      {ui.evolution && state && (
+        <div className="levelup evolution">
+          <div className="levelup-title">EVOLVED!</div>
+          <div className="levelup-sub">
+            {state.petName.toUpperCase()} IS NOW A {ui.evolution.name}!
+          </div>
+        </div>
+      )}
       {state && !state.onboardedAt && <Onboarding onDone={actions.completeOnboarding} />}
     </div>
   )

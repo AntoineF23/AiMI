@@ -17,6 +17,9 @@ export interface GameState {
   lastDailyGift: string
   muted: boolean
   onboardedAt: string
+  bestScores: Record<string, number>
+  accessory: string
+  skin: string
   createdAt: string
 }
 
@@ -30,5 +33,21 @@ export const DEFAULT_GAME_STATE: GameState = {
   lastDailyGift: '',
   muted: false,
   onboardedAt: '',
+  bestScores: {},
+  accessory: '',
+  skin: 'default',
   createdAt: new Date().toISOString()
+}
+
+export const BUILTIN_SKINS = [
+  { id: 'default', label: 'CLASSIC' },
+  { id: 'mint', label: 'MINTY' },
+  { id: 'peach', label: 'PEACHY' }
+]
+
+/** Evolution stages: the pet grows with its level. */
+export function stageForLevel(level: number): { stage: number; scale: number; name: string } {
+  if (level < 4) return { stage: 1, scale: 2, name: 'HATCHLING' }
+  if (level < 10) return { stage: 2, scale: 3, name: 'KIDDO' }
+  return { stage: 3, scale: 4, name: 'CHONK' }
 }

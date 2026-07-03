@@ -3,6 +3,8 @@ export interface SkinAnimation {
   frames: number
   fps: number
   loop: boolean
+  /** per-frame vertical offset of the head (for hat overlays) */
+  headDy: number[]
 }
 
 export interface Skin {
@@ -16,7 +18,7 @@ interface SkinManifest {
   name: string
   frameSize: number
   palette: Record<string, string>
-  animations: Record<string, { file: string; frames: number; fps: number; loop: boolean }>
+  animations: Record<string, { file: string; frames: number; fps: number; loop: boolean; headDy?: number[] }>
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -37,7 +39,8 @@ export async function loadSkin(baseUrl = './skins/default'): Promise<Skin> {
         image: await loadImage(`${baseUrl}/${def.file}`),
         frames: def.frames,
         fps: def.fps,
-        loop: def.loop
+        loop: def.loop,
+        headDy: def.headDy ?? new Array(def.frames).fill(0)
       }
     })
   )
@@ -56,6 +59,11 @@ export class Animator {
 
   get name(): string {
     return this.current
+  }
+
+  /** head offset of the frame being shown (hat tracking) */
+  get headDy(): number {
+    return this.skin.anims[this.current]?.headDy[this.frame] ?? 0
   }
 
   play(name: string, restart = false): void {

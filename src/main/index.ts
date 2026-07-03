@@ -1,6 +1,7 @@
-import { app, BrowserWindow, ipcMain, screen } from 'electron'
-import { writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { app, BrowserWindow, ipcMain, net, protocol, screen } from 'electron'
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { join, normalize } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { createTray } from './tray'
 import { registerStoreIpc } from './store'
 import { registerAiIpc } from './ai/chat'
@@ -90,9 +91,38 @@ function syncBoundsToDisplay() {
   petWindow.setBounds(petWindowBounds())
 }
 
+const userSkinsDir = () => join(app.getPath('userData'), 'skins')
+
 app.whenReady().then(() => {
   // Menu-bar utility: no Dock icon.
   app.dock?.hide()
+
+  // Community skins: drop a folder with skin.json + PNGs into userData/skins.
+  protocol.handle('aimi-skin', (req) => {
+    const url = new URL(req.url)
+    const rel = decodeURIComponent(url.hostname + url.pathname)
+    const base = userSkinsDir()
+    const target = normalize(join(base, rel))
+    if (!target.startsWith(base)) return new Response('forbidden', { status: 403 })
+    return net.fetch(pathToFileURL(target).toString())
+  })
+
+  ipcMain.handle('skins:list', () => {
+    try {
+      return readdirSync(userSkinsDir(), { withFileTypes: true })
+        .filter((d) => d.isDirectory() && existsSync(join(userSkinsDir(), d.name, 'skin.json')))
+        .map((d) => {
+          try {
+            const manifest = JSON.parse(readFileSync(join(userSkinsDir(), d.name, 'skin.json'), 'utf-8'))
+            return { id: d.name, label: String(manifest.name ?? d.name).toUpperCase() }
+          } catch {
+            return { id: d.name, label: d.name.toUpperCase() }
+          }
+        })
+    } catch {
+      return []
+    }
+  })
 
   registerStoreIpc()
   registerAiIpc(() => petWindow)
@@ -119,6 +149,9 @@ app.whenReady().then(() => {
   })
   ipcMain.on('pet:set-muted', (_e, muted: boolean) => {
     petWindow?.webContents.send('pet:muted', !!muted)
+  })
+  ipcMain.on('pet:set-skin', (_e, skinId: string) => {
+    petWindow?.webContents.send('pet:skin', String(skinId).slice(0, 60))
   })
 
   screen.on('display-metrics-changed', syncBoundsToDisplay)
@@ -176,6 +209,48 @@ app.whenReady().then(() => {
       }]
     ]
     for (const [t, fn] of stages) setTimeout(fn, t)
+  }
+
+  // Dev-only games/skins walkthrough
+  if (process.env.AIMI_DEMO_GAMES) {
+    const prefix = process.env.AIMI_DEMO_GAMES
+    const js = (code: string) => petWindow?.webContents.executeJavaScript(code).catch(console.error)
+    const shot = async (name: string) => {
+      const img = await petWindow?.webContents.capturePage()
+      if (img) writeFileSync(`${prefix}-${name}.png`, img.toPNG())
+    }
+    const clickPet = `(() => {
+      const pet = document.querySelector('.pet')
+      pet.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1 }))
+      pet.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 1 }))
+    })()`
+    const openGame = (i: number) => [
+      () => js(clickPet),
+      () => js(`document.querySelectorAll('.radial-btn')[2]?.click()`),
+      () => js(`document.querySelectorAll('.games-item')[${i}]?.click()`)
+    ]
+    const seq: [number, () => void][] = []
+    let t = 5000
+    const push = (fn: () => void, wait = 700): void => {
+      seq.push([t, fn])
+      t += wait
+    }
+    push(() => js(clickPet))
+    push(() => js(`document.querySelectorAll('.radial-btn')[2]?.click()`))
+    push(() => shot('games-menu'))
+    for (const fn of openGame(0)) push(fn)
+    push(() => shot('catch'), 2500)
+    push(() => js(`document.querySelector('.game-shell .chat-close')?.click()`))
+    for (const fn of openGame(1)) push(fn)
+    push(() => shot('pong'), 2500)
+    push(() => js(`document.querySelector('.game-shell .chat-close')?.click()`))
+    for (const fn of openGame(2)) push(fn)
+    push(() => js(`document.querySelectorAll('.ttt-cell')[4]?.click()`), 1200)
+    push(() => shot('ttt'))
+    push(() => js(`document.querySelector('.game-shell .chat-close')?.click()`))
+    push(() => petWindow?.webContents.send('pet:skin', 'mint'), 1500)
+    push(() => shot('mint'))
+    for (const [when, fn] of seq) setTimeout(fn, when)
   }
 
   // Dev-only onboarding + proactive-brain walkthrough (with AIMI_TICK_NOW=1)

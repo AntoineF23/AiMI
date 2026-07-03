@@ -25,7 +25,7 @@ export class PetEngine {
   x = 120
   y = 0
   facing: 1 | -1 = 1
-  readonly size: number
+  size: number
 
   /** Hook for the app layer (radial menu, chat) — fired on a clean click. */
   onPetClicked?: (petCenterX: number, petCenterY: number) => void
@@ -35,6 +35,8 @@ export class PetEngine {
   private state: State = { kind: 'idle', until: 0 }
   private animator: Animator
   private ctx: CanvasRenderingContext2D
+  private scale: number
+  private hatImg: HTMLImageElement | null = null
   private raf = 0
   private lastT = 0
   private now = 0
@@ -49,9 +51,11 @@ export class PetEngine {
     private petEl: HTMLDivElement,
     spriteCanvas: HTMLCanvasElement,
     private skin: Skin,
-    private particles: ParticleSystem
+    private particles: ParticleSystem,
+    scale = PET_SCALE
   ) {
-    this.size = skin.frameSize * PET_SCALE
+    this.scale = scale
+    this.size = skin.frameSize * scale
     this.animator = new Animator(skin)
     spriteCanvas.width = skin.frameSize
     spriteCanvas.height = skin.frameSize
@@ -61,6 +65,32 @@ export class PetEngine {
 
     this.x = Math.random() * Math.max(1, window.innerWidth - this.size)
     this.y = this.groundY()
+  }
+
+  /** Evolution: the pet literally grows. */
+  setScale(scale: number): void {
+    this.scale = scale
+    this.size = this.skin.frameSize * scale
+    this.petEl.style.width = `${this.size}px`
+    this.petEl.style.height = `${this.size}px`
+    this.x = Math.min(this.x, Math.max(0, window.innerWidth - this.size))
+    if (this.state.kind !== 'dragged' && this.state.kind !== 'falling') this.y = this.groundY()
+  }
+
+  setAccessory(name: string | null): void {
+    if (!name) {
+      this.hatImg = null
+      return
+    }
+    const img = new Image()
+    img.src = `./px/${name}.png`
+    this.hatImg = img
+  }
+
+  setSkin(skin: Skin): void {
+    this.skin = skin
+    this.animator = new Animator(skin)
+    this.setScale(this.scale)
   }
 
   start(): void {
@@ -124,6 +154,16 @@ export class PetEngine {
     this.tick(dt)
     this.animator.update(dt)
     this.animator.draw(this.ctx, this.facing)
+    if (this.hatImg?.complete && this.hatImg.naturalWidth > 0) {
+      const s = this.skin.frameSize
+      this.ctx.save()
+      if (this.facing === -1) {
+        this.ctx.translate(s, 0)
+        this.ctx.scale(-1, 1)
+      }
+      this.ctx.drawImage(this.hatImg, 0, this.animator.headDy)
+      this.ctx.restore()
+    }
     this.particles.update(dt)
     this.particles.draw()
     this.petEl.style.transform = `translate3d(${Math.round(this.x)}px, ${Math.round(this.y)}px, 0)`

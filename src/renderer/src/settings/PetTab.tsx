@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { BUILTIN_SKINS } from '../../../shared/types'
 
 export function PetTab() {
   const [name, setName] = useState('AiMI')
@@ -6,16 +7,20 @@ export function PetTab() {
   const [saved, setSaved] = useState(false)
   const [allowScreenshots, setAllowScreenshots] = useState(true)
   const [shareActiveApp, setShareActiveApp] = useState(false)
+  const [skin, setSkin] = useState('default')
+  const [userSkins, setUserSkins] = useState<{ id: string; label: string }[]>([])
 
   useEffect(() => {
     window.aimi.loadState().then((s) => {
       setName(s.petName)
       setMutedState(s.muted)
+      setSkin(s.skin || 'default')
     })
     window.aimi.ai.getSettings().then((s) => {
       setAllowScreenshots(s.allowScreenshots)
       setShareActiveApp(s.shareActiveApp)
     })
+    window.aimi.skins.list().then(setUserSkins)
   }, [])
 
   return (
@@ -40,6 +45,28 @@ export function PetTab() {
           >
             {saved ? 'SAVED!' : 'SAVE'}
           </button>
+        </div>
+      </section>
+
+      <section>
+        <h2>SKIN</h2>
+        <div className="model-chips">
+          {[...BUILTIN_SKINS, ...userSkins].map((s) => (
+            <button
+              key={s.id}
+              className={`chip${skin === s.id ? ' active' : ''}`}
+              onClick={() => {
+                setSkin(s.id)
+                window.aimi.pet.setSkin(s.id)
+              }}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+        <div className="hint">
+          ADD YOUR OWN: DROP A SKIN FOLDER (SKIN.JSON + PNGS) INTO THE APP'S "SKINS" FOLDER — SEE THE SKIN GUIDE ON
+          GITHUB.
         </div>
       </section>
 

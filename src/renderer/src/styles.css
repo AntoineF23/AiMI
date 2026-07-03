@@ -726,6 +726,133 @@ img.px {
   background: var(--gold);
 }
 
+/* -------------------------------------------------------------- games --- */
+
+.games-menu,
+.game-shell {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 3px solid var(--ink);
+  box-shadow:
+    inset 0 0 0 2px var(--border),
+    6px 6px 0 rgba(20, 12, 40, 0.5);
+  color: #fff;
+  pointer-events: auto;
+  animation: pop-in 0.2s steps(4) both;
+}
+
+.games-menu {
+  width: 340px;
+  padding-bottom: 12px;
+}
+
+.games-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 14px;
+}
+
+.games-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 2px solid var(--border);
+  background: var(--ink);
+  color: #fff;
+  font-size: 8px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.games-item:hover {
+  background: var(--panel-2);
+  border-color: var(--accent);
+}
+
+.games-item span:nth-child(2) {
+  flex: 1;
+  text-align: left;
+}
+
+.games-best {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 7px;
+  color: var(--gold);
+}
+
+.games-hats {
+  padding: 6px 14px 0;
+}
+
+.games-hats-title {
+  font-size: 7px;
+  opacity: 0.7;
+  margin-bottom: 8px;
+}
+
+.games-hats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.games-hats-row .chip:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.game-canvas {
+  display: block;
+  margin: 8px 14px 0;
+  border: 2px solid var(--border);
+  image-rendering: pixelated;
+  cursor: none;
+}
+
+.game-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px 12px;
+  font-size: 9px;
+  color: var(--gold);
+}
+
+.ttt-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 84px);
+  gap: 8px;
+  padding: 12px 14px 0;
+}
+
+.ttt-cell {
+  height: 84px;
+  border: 2px solid var(--border);
+  background: var(--ink);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ttt-cell:hover:enabled {
+  background: var(--panel-2);
+  border-color: var(--accent);
+}
+
+.evolution .levelup-title {
+  color: #67e8f9;
+}
+
 /* -------------------------------------------------------------- album --- */
 
 .album {
