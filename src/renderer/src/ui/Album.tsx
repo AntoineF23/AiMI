@@ -17,7 +17,7 @@ export function Album({ state, onClose }: { state: GameState; onClose: () => voi
   return (
     <div className="album hit">
       <div className="album-header">
-        <Px name="book" size={16} />
+        <Px name="book" size={20} />
         <span className="album-title">STICKER ALBUM</span>
         <span className="album-count">
           {owned.size}/{STICKERS.length}
@@ -39,7 +39,7 @@ export function Album({ state, onClose }: { state: GameState; onClose: () => voi
               style={has ? { borderColor: RARITY_COLORS[s.rarity] } : undefined}
               title={has ? s.name : '???'}
             >
-              <Px name={has ? s.id : 'question'} size={32} />
+              <Px name={has ? s.id : 'question'} size={40} />
               <span className="album-name">{has ? s.name : '???'}</span>
             </div>
           )

@@ -16,10 +16,10 @@ export function GameShell({
     <div className="game-shell hit">
       <div className="chat-header">
         <span className="chat-title">
-          <Px name={icon} size={16} /> {title}
+          <Px name={icon} size={18} /> {title}
         </span>
         <button className="chat-close" onClick={onClose}>
-          <Px name="xmark" size={12} />
+          <Px name="xmark" size={14} />
         </button>
       </div>
       {children}

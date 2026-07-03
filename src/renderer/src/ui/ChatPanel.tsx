@@ -157,10 +157,10 @@ export function ChatPanel({ anchor, pendingScreenshot, petName, level, streak, e
     <div className="chat hit" style={{ left: x, top: anchor.y - 12 }}>
       <div className="chat-header">
         <span className="chat-title">
-          <Px name="bubble" size={16} /> {petName.toUpperCase()}
+          <Px name="bubble" size={18} /> {petName.toUpperCase()}
         </span>
         <button className="chat-close" onClick={onClose}>
-          <Px name="xmark" size={12} />
+          <Px name="xmark" size={14} />
         </button>
       </div>
       <div className="chat-list" ref={listRef}>

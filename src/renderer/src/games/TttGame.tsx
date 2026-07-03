@@ -86,18 +86,18 @@ export function TttGame({ onEnd, onClose }: { onEnd: (score: number, max: number
       <div className="ttt-grid">
         {board.map((cell, i) => (
           <button key={i} className="ttt-cell" onClick={() => play(i)} disabled={locked || !!cell || !!w}>
-            {cell === 'you' && <Px name="heart" size={32} />}
-            {cell === 'pet' && <Px name="paw" size={32} />}
+            {cell === 'you' && <Px name="heart" size={44} />}
+            {cell === 'pet' && <Px name="paw" size={44} />}
           </button>
         ))}
       </div>
       <div className="game-hud">
         <span>
-          YOU <Px name="heart" size={12} />
+          YOU <Px name="heart" size={16} />
         </span>
         <span>{w === 'you' ? 'YOU WIN!' : w === 'pet' ? 'PET WINS!' : w === 'draw' ? 'DRAW!' : ''}</span>
         <span>
-          PET <Px name="paw" size={12} />
+          PET <Px name="paw" size={16} />
         </span>
       </div>
     </GameShell>

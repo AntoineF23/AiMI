@@ -4,8 +4,8 @@ import { GameShell } from './GameShell'
 import { drawPetSprite } from './gameUtils'
 import { sfx } from '../game/sound'
 
-const W = 340
-const H = 260
+const W = 420
+const H = 320
 const WIN_AT = 5
 
 export function PongGame({ skin, onEnd, onClose }: { skin: Skin; onEnd: (score: number, max: number) => void; onClose: () => void }) {
@@ -39,7 +39,7 @@ export function PongGame({ skin, onEnd, onClose }: { skin: Skin; onEnd: (score: 
     }
     canvas.addEventListener('mousemove', onMove)
 
-    const PADDLE_W = 56
+    const PADDLE_W = 68
     const loop = (t: number): void => {
       const dt = last ? Math.min((t - last) / 1000, 0.05) : 0.016
       last = t
@@ -88,7 +88,7 @@ export function PongGame({ skin, onEnd, onClose }: { skin: Skin; onEnd: (score: 
       ctx.fillRect(px, H - 20, PADDLE_W, 8)
       ctx.fillStyle = '#ff9ecf'
       ctx.fillRect(ex, 12, PADDLE_W, 8)
-      drawPetSprite(ctx, sheet, skin.frameSize, ex + PADDLE_W / 2 - 16, -6, 32)
+      drawPetSprite(ctx, sheet, skin.frameSize, ex + PADDLE_W / 2 - 20, -8, 40)
       ctx.fillStyle = '#ffd75e'
       ctx.fillRect(ball.x - 5, ball.y - 5, 10, 10)
 

@@ -40,8 +40,8 @@ body {
 }
 
 .tab {
-  padding: 10px 14px;
-  font-size: 8px;
+  padding: 12px 16px;
+  font-size: 10px;
   font-family: inherit;
   cursor: pointer;
   border: 3px solid var(--border);
@@ -64,8 +64,8 @@ body {
 }
 
 .memory-profile {
-  font-size: 7px;
-  line-height: 1.9;
+  font-size: 9px;
+  line-height: 2;
   padding: 12px;
   border: 2px solid var(--border);
   background: var(--panel);
@@ -81,7 +81,7 @@ body {
 }
 
 .memory-empty {
-  font-size: 7px;
+  font-size: 9px;
   opacity: 0.5;
   padding: 8px 0;
 }
@@ -97,19 +97,19 @@ body {
 
 .memory-fact-text {
   flex: 1;
-  font-size: 6.5px;
-  line-height: 1.7;
+  font-size: 8.5px;
+  line-height: 1.9;
 }
 
 .memory-del {
   border: 2px solid var(--border);
   background: var(--ink);
   color: #ff8fb8;
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   cursor: pointer;
   font-family: inherit;
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .memory-del:hover {
@@ -117,8 +117,8 @@ body {
 }
 
 button.danger {
-  padding: 11px 16px;
-  font-size: 8px;
+  padding: 13px 18px;
+  font-size: 10px;
   font-family: inherit;
   cursor: pointer;
   border: 3px solid var(--ink);
@@ -141,20 +141,20 @@ button.danger:active {
 }
 
 header h1 {
-  font-size: 14px;
+  font-size: 17px;
   margin-bottom: 12px;
   color: var(--gold);
   text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
 }
 
 header p {
-  font-size: 7px;
-  line-height: 1.9;
+  font-size: 9px;
+  line-height: 2;
   opacity: 0.8;
 }
 
 h2 {
-  font-size: 8px;
+  font-size: 10px;
   opacity: 0.8;
   margin-bottom: 10px;
   display: flex;
@@ -165,7 +165,7 @@ h2 {
 .badge {
   background: #4ade80;
   color: var(--ink);
-  font-size: 6px;
+  font-size: 8px;
   padding: 3px 6px;
   border: 2px solid var(--ink);
 }
@@ -200,33 +200,33 @@ h2 {
 }
 
 .provider-swatch {
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   border: 2px solid var(--ink);
   image-rendering: pixelated;
 }
 
 .provider-label {
-  font-size: 6px;
+  font-size: 8px;
   text-align: center;
   line-height: 1.5;
 }
 
 .hint {
   margin-top: 10px;
-  font-size: 6.5px;
-  opacity: 0.6;
-  line-height: 1.6;
+  font-size: 8px;
+  opacity: 0.65;
+  line-height: 1.8;
 }
 
 input[type='text'],
 input[type='password'] {
   width: 100%;
-  padding: 10px 10px;
+  padding: 12px 12px;
   border: 2px solid var(--border);
   background: var(--panel);
   color: #fff;
-  font-size: 8px;
+  font-size: 10px;
   font-family: inherit;
   outline: none;
 }
@@ -252,11 +252,11 @@ input:focus {
 }
 
 .chip {
-  padding: 8px 10px;
+  padding: 10px 12px;
   border: 2px solid var(--border);
   background: var(--panel);
   color: #fff;
-  font-size: 6.5px;
+  font-size: 8.5px;
   font-family: inherit;
   cursor: pointer;
 }
@@ -271,10 +271,10 @@ input:focus {
 }
 
 .warn {
-  font-size: 6.5px;
+  font-size: 8.5px;
   color: var(--gold);
   margin-bottom: 10px;
-  line-height: 1.7;
+  line-height: 1.9;
 }
 
 .actions {
@@ -285,8 +285,8 @@ input:focus {
 
 button.primary,
 button.ghost {
-  padding: 11px 16px;
-  font-size: 8px;
+  padding: 13px 18px;
+  font-size: 10px;
   font-family: inherit;
   cursor: pointer;
   border: 3px solid var(--ink);
@@ -318,10 +318,10 @@ button.ghost:disabled {
 
 .test-ok,
 .test-fail {
-  font-size: 7px;
-  padding: 12px;
+  font-size: 9px;
+  padding: 13px;
   border: 2px solid;
-  line-height: 1.7;
+  line-height: 1.9;
 }
 
 .test-ok {
@@ -337,8 +337,8 @@ button.ghost:disabled {
 }
 
 footer {
-  font-size: 6px;
-  opacity: 0.55;
+  font-size: 8px;
+  opacity: 0.6;
   text-align: center;
-  line-height: 1.8;
+  line-height: 2;
 }

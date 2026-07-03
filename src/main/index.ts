@@ -19,8 +19,8 @@ function openSettingsWindow(): void {
     return
   }
   settingsWindow = new BrowserWindow({
-    width: 520,
-    height: 680,
+    width: 600,
+    height: 800,
     title: 'AiMI Settings',
     resizable: false,
     minimizable: false,

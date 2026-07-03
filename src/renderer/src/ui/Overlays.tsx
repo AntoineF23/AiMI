@@ -7,7 +7,7 @@ export function Toasts({ toasts }: { toasts: ToastItem[] }) {
     <>
       {toasts.map((t) => (
         <div key={t.id} className="toast" style={{ left: t.x, top: t.y }}>
-          {t.icon && <Px name={t.icon} size={32} />}
+          {t.icon && <Px name={t.icon} size={36} />}
           {t.text}
         </div>
       ))}
@@ -36,9 +36,9 @@ export function LevelUpBanner({ level, coins }: { level: number; coins: number }
   return (
     <div className="levelup">
       <div className="levelup-stars">
-        <Px name="star" size={24} />
         <Px name="star" size={32} />
-        <Px name="star" size={24} />
+        <Px name="star" size={44} />
+        <Px name="star" size={32} />
       </div>
       <div className="levelup-title">LEVEL {level}!</div>
       <div className="levelup-sub">
@@ -88,7 +88,7 @@ export function Bubble({
 export function GiftBox({ x, onOpen }: { x: number; onOpen: () => void }) {
   return (
     <button className="gift hit" style={{ left: x }} onClick={onOpen} title="A present appeared!">
-      <Px name="gift" size={48} />
+      <Px name="gift" size={64} />
     </button>
   )
 }

@@ -5,8 +5,8 @@ import { drawPx, drawPetSprite } from './gameUtils'
 import { TREAT_ICONS } from '../game/rewards'
 import { sfx } from '../game/sound'
 
-const W = 340
-const H = 240
+const W = 420
+const H = 300
 const DURATION = 30
 
 export function CatchGame({ skin, onEnd, onClose }: { skin: Skin; onEnd: (score: number, max: number) => void; onClose: () => void }) {
@@ -47,11 +47,11 @@ export function CatchGame({ skin, onEnd, onClose }: { skin: Skin; onEnd: (score:
           icon: TREAT_ICONS[Math.floor(Math.random() * TREAT_ICONS.length)]
         })
       }
-      const px = Math.min(W - 48, Math.max(0, petX - 24))
+      const px = Math.min(W - 60, Math.max(0, petX - 30))
       for (let i = treats.length - 1; i >= 0; i--) {
         const tr = treats[i]
         tr.y += tr.v * dt
-        if (tr.y > H - 56 && tr.y < H - 16 && tr.x + 24 > px && tr.x < px + 48) {
+        if (tr.y > H - 68 && tr.y < H - 20 && tr.x + 28 > px && tr.x < px + 60) {
           treats.splice(i, 1)
           score++
           sfx.xp()
@@ -63,9 +63,9 @@ export function CatchGame({ skin, onEnd, onClose }: { skin: Skin; onEnd: (score:
       ctx.fillStyle = '#241a3d'
       ctx.fillRect(0, 0, W, H)
       ctx.fillStyle = '#362a5c'
-      ctx.fillRect(0, H - 12, W, 12)
-      for (const tr of treats) drawPx(ctx, tr.icon, tr.x, tr.y, 24)
-      drawPetSprite(ctx, sheet, skin.frameSize, px, H - 60, 48)
+      ctx.fillRect(0, H - 14, W, 14)
+      for (const tr of treats) drawPx(ctx, tr.icon, tr.x, tr.y, 30)
+      drawPetSprite(ctx, sheet, skin.frameSize, px, H - 74, 60)
 
       setHud({ score, time: Math.max(0, Math.ceil(DURATION - elapsed)) })
       if (elapsed >= DURATION && !done) {

@@ -35,7 +35,7 @@ export function RadialMenu({ anchor, state, onTreat, onPet, onPlay, onTalk, onAl
       onClose()
     }
   }
-  const radius = 106
+  const radius = 128
   const cx = Math.min(window.innerWidth - radius - 48, Math.max(radius + 48, anchor.x))
   const cy = anchor.y + 30
   const prog = levelProgress(state.totalXp)
@@ -54,21 +54,21 @@ export function RadialMenu({ anchor, state, onTreat, onPet, onPlay, onTalk, onAl
             style={{ transform: `translate(${x}px, ${y}px)` }}
             onClick={handlers[item.key]}
           >
-            <Px name={item.icon} size={16} />
+            <Px name={item.icon} size={24} />
             <span className="radial-label">{item.label}</span>
           </button>
         )
       })}
-      <div className="hud-pill" style={{ transform: `translate(-50%, ${-radius - 78}px)` }}>
+      <div className="hud-pill" style={{ transform: `translate(-50%, ${-radius - 84}px)` }}>
         <span className="hud-level">LV{prog.level}</span>
         <span className="hud-bar">
           <span className="hud-bar-fill" style={{ width: `${Math.round(prog.ratio * 100)}%` }} />
         </span>
-        <Px name="coin" size={16} />
+        <Px name="coin" size={18} />
         <span>{state.coins}</span>
         {state.streak.count > 1 && (
           <>
-            <Px name="star" size={16} />
+            <Px name="star" size={18} />
             <span>{state.streak.count}</span>
           </>
         )}

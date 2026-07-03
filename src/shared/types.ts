@@ -47,7 +47,7 @@ export const BUILTIN_SKINS = [
 
 /** Evolution stages: the pet grows with its level. */
 export function stageForLevel(level: number): { stage: number; scale: number; name: string } {
-  if (level < 4) return { stage: 1, scale: 2, name: 'HATCHLING' }
-  if (level < 10) return { stage: 2, scale: 3, name: 'KIDDO' }
-  return { stage: 3, scale: 4, name: 'CHONK' }
+  if (level < 4) return { stage: 1, scale: 3, name: 'HATCHLING' }
+  if (level < 10) return { stage: 2, scale: 4, name: 'KIDDO' }
+  return { stage: 3, scale: 5, name: 'CHONK' }
 }

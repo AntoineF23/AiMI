@@ -43,7 +43,7 @@ export class PetEngine {
   private zzzTimer = 0
   private dragOffsetX = 0
   private dragOffsetY = 0
-  private dragMoved = false
+  private dragPending = false // button down, not yet moved enough to be a drag
   private lastDragX = 0
   private lastDragY = 0
 
@@ -97,6 +97,9 @@ export class PetEngine {
     this.petEl.addEventListener('pointerdown', this.onPointerDown)
     this.petEl.addEventListener('pointermove', this.onPointerMove)
     this.petEl.addEventListener('pointerup', this.onPointerUp)
+    this.petEl.addEventListener('pointercancel', this.onPointerCancel)
+    this.petEl.addEventListener('lostpointercapture', this.onPointerCancel)
+    window.addEventListener('blur', this.onWindowBlur)
     window.addEventListener('resize', this.onResize)
     this.raf = requestAnimationFrame(this.loop)
   }
@@ -106,6 +109,9 @@ export class PetEngine {
     this.petEl.removeEventListener('pointerdown', this.onPointerDown)
     this.petEl.removeEventListener('pointermove', this.onPointerMove)
     this.petEl.removeEventListener('pointerup', this.onPointerUp)
+    this.petEl.removeEventListener('pointercancel', this.onPointerCancel)
+    this.petEl.removeEventListener('lostpointercapture', this.onPointerCancel)
+    window.removeEventListener('blur', this.onWindowBlur)
     window.removeEventListener('resize', this.onResize)
   }
 
@@ -277,7 +283,7 @@ export class PetEngine {
 
   private groundY(): number {
     // sprite has ~2px of transparent margin below the feet
-    return window.innerHeight - this.size + 2 * PET_SCALE
+    return window.innerHeight - this.size + 2 * this.scale
   }
 
   // -------------------------------------------------------------------------
@@ -291,11 +297,11 @@ export class PetEngine {
       /* synthetic events have no active pointer */
     }
     interactivityLock.dragging = true
-    this.state = { kind: 'dragged' }
-    this.petEl.classList.add('dragging')
+    // NOT a drag yet — the pet only follows the cursor once it actually moves
+    // while the button stays held. A plain click never moves it.
+    this.dragPending = true
     this.dragOffsetX = e.clientX - this.x
     this.dragOffsetY = e.clientY - this.y
-    this.dragMoved = false
     this.lastDragX = e.clientX
     this.lastDragY = e.clientY
     this.vx = 0
@@ -303,12 +309,22 @@ export class PetEngine {
   }
 
   private onPointerMove = (e: PointerEvent): void => {
-    if (this.state.kind !== 'dragged') return
+    const dragging = this.state.kind === 'dragged'
+    if (!this.dragPending && !dragging) return
+    // missed pointerup (focus loss, menu opening...): never stay glued to the cursor
+    if (e.buttons === 0) {
+      this.endDrag(e, false)
+      return
+    }
+    if (!dragging) {
+      const movedX = Math.abs(e.clientX - (this.x + this.dragOffsetX))
+      const movedY = Math.abs(e.clientY - (this.y + this.dragOffsetY))
+      if (movedX <= CLICK_DRAG_THRESHOLD && movedY <= CLICK_DRAG_THRESHOLD) return
+      this.state = { kind: 'dragged' }
+      this.petEl.classList.add('dragging')
+    }
     const dx = e.clientX - this.lastDragX
     const dy = e.clientY - this.lastDragY
-    if (Math.abs(e.clientX - (this.x + this.dragOffsetX)) > CLICK_DRAG_THRESHOLD || Math.abs(dy) > CLICK_DRAG_THRESHOLD) {
-      this.dragMoved = true
-    }
     // exponential smoothing of throw velocity
     this.vx = this.vx * 0.7 + (dx / 0.016) * 0.3
     this.vy = this.vy * 0.7 + (dy / 0.016) * 0.3
@@ -319,23 +335,39 @@ export class PetEngine {
   }
 
   private onPointerUp = (e: PointerEvent): void => {
-    if (this.state.kind !== 'dragged') return
-    try {
-      this.petEl.releasePointerCapture(e.pointerId)
-    } catch {
-      /* synthetic events have no active pointer */
-    }
+    this.endDrag(e, true)
+  }
+
+  private onPointerCancel = (e: PointerEvent): void => {
+    this.endDrag(e, false)
+  }
+
+  private onWindowBlur = (): void => {
+    this.endDrag(null, false)
+  }
+
+  private endDrag(e: PointerEvent | null, allowClick: boolean): void {
+    const dragging = this.state.kind === 'dragged'
+    if (!this.dragPending && !dragging) return
+    this.dragPending = false
     interactivityLock.dragging = false
     this.petEl.classList.remove('dragging')
-    if (!this.dragMoved) {
+    if (e) {
+      try {
+        this.petEl.releasePointerCapture(e.pointerId)
+      } catch {
+        /* not captured */
+      }
+    }
+    if (dragging) {
+      this.vx = Math.max(-900, Math.min(900, this.vx))
+      this.vy = Math.max(-900, Math.min(900, this.vy))
+      this.state = { kind: 'falling' }
+    } else if (allowClick) {
       // clean click — celebration + app hook
       this.celebrate()
       this.onPetClicked?.(this.centerX, this.y)
-      return
     }
-    this.vx = Math.max(-900, Math.min(900, this.vx))
-    this.vy = Math.max(-900, Math.min(900, this.vy))
-    this.state = { kind: 'falling' }
   }
 
   private onResize = (): void => {

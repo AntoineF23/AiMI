@@ -20,6 +20,31 @@ export function skinBaseUrl(id: string): string {
   return BUILTIN_SKINS.some((s) => s.id === id) ? `./skins/${id}` : `aimi-skin://${id}`
 }
 
+/**
+ * Live pet position for anchored UI (menu, chat, bubbles) so panels follow
+ * the pet when it's dragged or wanders instead of hanging in the air.
+ */
+function usePetAnchor(engineRef: React.RefObject<PetEngine | null>, enabled: boolean): { x: number; y: number } | null {
+  const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null)
+  useEffect(() => {
+    if (!enabled) {
+      setAnchor(null)
+      return
+    }
+    const update = (): void => {
+      const e = engineRef.current
+      if (!e) return
+      setAnchor((prev) =>
+        prev && Math.abs(prev.x - e.centerX) < 2 && Math.abs(prev.y - e.y) < 2 ? prev : { x: e.centerX, y: e.y }
+      )
+    }
+    update()
+    const id = setInterval(update, 80)
+    return () => clearInterval(id)
+  }, [enabled, engineRef])
+  return anchor
+}
+
 export function PetApp() {
   const petRef = useRef<HTMLDivElement>(null)
   const spriteRef = useRef<HTMLCanvasElement>(null)
@@ -76,6 +101,7 @@ export function PetApp() {
   }, [skin])
 
   const { state, ui, actions } = game
+  const live = usePetAnchor(engineRef, !!(ui.menu || ui.chat || ui.bubble))
 
   return (
     <div className="stage">
@@ -88,7 +114,7 @@ export function PetApp() {
       <Toasts toasts={ui.toasts} />
       {ui.bubble && (
         <Bubble
-          bubble={ui.bubble}
+          bubble={live ? { ...ui.bubble, anchor: live } : ui.bubble}
           onClick={actions.openChatFromBubble}
           onApprove={actions.approveScreenshot}
           onDecline={actions.declineScreenshot}
@@ -97,7 +123,7 @@ export function PetApp() {
       {ui.gift && <GiftBox x={ui.gift.x} onOpen={actions.openGift} />}
       {ui.menu && state && (
         <RadialMenu
-          anchor={ui.menu}
+          anchor={live ?? ui.menu}
           state={state}
           onTreat={actions.feedTreat}
           onPet={actions.petPet}
@@ -109,7 +135,7 @@ export function PetApp() {
       )}
       {ui.chat && state && (
         <ChatPanel
-          anchor={ui.chat.anchor}
+          anchor={live ?? ui.chat.anchor}
           pendingScreenshot={ui.chat.screenshot}
           petName={state.petName}
           level={levelFromXp(state.totalXp)}

@@ -30,26 +30,26 @@ export function GamesMenu({ state, onStart, onZoomies, onHat, onClose }: Props) 
     <div className="games-menu hit">
       <div className="chat-header">
         <span className="chat-title">
-          <Px name="gamepad" size={16} /> PLAYTIME
+          <Px name="gamepad" size={18} /> PLAYTIME
         </span>
         <button className="chat-close" onClick={onClose}>
-          <Px name="xmark" size={12} />
+          <Px name="xmark" size={14} />
         </button>
       </div>
       <div className="games-list">
         {GAMES.map((g) => (
           <button key={g.id} className="games-item" onClick={() => onStart(g.id)}>
-            <Px name={g.icon} size={24} />
+            <Px name={g.icon} size={30} />
             <span>{g.label}</span>
             {state.bestScores?.[g.id] !== undefined && (
               <span className="games-best">
-                <Px name="trophy" size={14} /> {state.bestScores[g.id]}
+                <Px name="trophy" size={16} /> {state.bestScores[g.id]}
               </span>
             )}
           </button>
         ))}
         <button className="games-item" onClick={onZoomies}>
-          <Px name="star" size={24} />
+          <Px name="star" size={30} />
           <span>JUST ZOOMIES</span>
         </button>
       </div>
