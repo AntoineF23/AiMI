@@ -158,7 +158,7 @@ const STAGES: Record<number, StageCfg> = {
     footY: 26,
     shoulder: [17, 15],
     headBase: [19, 11],
-    hornBands: 1,
+    hornBands: 2,
     hornLit: false,
     maneBlocks: 2,
     tailSegs: 3,
@@ -174,7 +174,7 @@ const STAGES: Record<number, StageCfg> = {
     footY: 26,
     shoulder: [18, 12],
     headBase: [21, 8],
-    hornBands: 2,
+    hornBands: 3,
     hornLit: false,
     maneBlocks: 4,
     tailSegs: 4,
@@ -295,18 +295,18 @@ interface UPose {
 const LEGS_STAND: [Leg, Leg, Leg, Leg] = [{}, {}, {}, {}]
 
 function drawHornAndMane(g: Grid, cfg: StageCfg, hx: number, hy: number, sx: number, sy: number, flow: number): void {
-  // horn: a tapering spike rooted in the FOREHEAD (front of the skull, right
-  // above the eye), sweeping slightly forward — 2px at the base, 1px tip
+  // horn: a spike rooted in the FOREHEAD right above the eye, thrusting
+  // FORWARD at 45° (one pixel up AND forward per band) — 2px base, 1px tip
   const bandColors: ColorKey[] = ['horn1', 'horn2', 'horn3', 'horn4', 'horn4']
   const bands = cfg.hornBands
   for (let b = 0; b < bands; b++) {
-    const bx = hx + 3 + Math.floor(b / 2)
+    const bx = hx + 3 + b
     const by = hy - 1 - b
     const w = b < Math.ceil(bands / 2) ? 2 : 1
-    g.fillRect(bx + (w === 1 ? 1 : 0), by, w, 1, bandColors[b])
+    g.fillRect(bx, by, w, 1, bandColors[b])
   }
   if (cfg.hornLit) {
-    g.set(hx + 3 + Math.floor(bands / 2) + 1, hy - 1 - bands, 'hornTip')
+    g.set(hx + 3 + bands, hy - 1 - bands, 'hornTip')
   }
 
   // forelock
@@ -540,12 +540,12 @@ const ANIMATIONS: Record<string, AnimDef> = {
     fps: 6,
     loop: false,
     frames: [
-      { headDy: 6, headDx: 2, tail: 1 },
-      { headDy: 12, headDx: 3, eye: 'blink', tail: 1 },
-      { headDy: 12, headDx: 4, eye: 'blink', tail: 2 },
-      { headDy: 12, headDx: 3, eye: 'blink', tail: 2 },
-      { headDy: 12, headDx: 4, eye: 'blink', tail: 1 },
-      { headDy: 6, headDx: 2, tail: 0 }
+      { headDy: 6, headDx: 1, tail: 1 },
+      { headDy: 12, headDx: 2, eye: 'blink', tail: 1 },
+      { headDy: 12, headDx: 2, eye: 'blink', tail: 2 },
+      { headDy: 12, headDx: 1, eye: 'blink', tail: 2 },
+      { headDy: 12, headDx: 2, eye: 'blink', tail: 1 },
+      { headDy: 6, headDx: 1, tail: 0 }
     ]
   },
   think: {
