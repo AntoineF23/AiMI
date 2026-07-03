@@ -6,7 +6,7 @@ import { createTray } from './tray'
 import { registerStoreIpc } from './store'
 import { registerAiIpc } from './ai/chat'
 import { registerMemoryIpc } from './memory'
-import { registerCaptureIpc } from './capture'
+import { captureScreen, registerCaptureIpc } from './capture'
 import { startBrain } from './brain'
 
 let petWindow: BrowserWindow | null = null
@@ -127,7 +127,7 @@ app.whenReady().then(() => {
   registerStoreIpc()
   registerAiIpc(() => petWindow)
   registerMemoryIpc()
-  registerCaptureIpc()
+  registerCaptureIpc(() => petWindow)
   petWindow = createPetWindow()
   startBrain(() => petWindow)
 
@@ -210,6 +210,19 @@ app.whenReady().then(() => {
       }]
     ]
     for (const [t, fn] of stages) setTimeout(fn, t)
+  }
+
+  // Dev-only: dump exactly what a screen peek would send to the model
+  if (process.env.AIMI_TEST_CAPTURE) {
+    setTimeout(async () => {
+      const r = await captureScreen(petWindow)
+      if (r.ok) {
+        writeFileSync(process.env.AIMI_TEST_CAPTURE!, Buffer.from(r.dataUrl.split(',')[1], 'base64'))
+        console.log('test capture written')
+      } else {
+        console.error('test capture failed:', r.reason)
+      }
+    }, 12000)
   }
 
   // Dev-only games/skins walkthrough
