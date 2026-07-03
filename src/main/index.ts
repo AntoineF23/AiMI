@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, screen } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, screen } from 'electron'
 import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { createTray } from './tray'
@@ -93,6 +93,16 @@ function syncBoundsToDisplay() {
 app.whenReady().then(() => {
   // Menu-bar utility: no Dock icon.
   app.dock?.hide()
+
+  // Invisible app menu so Cmd+Q quits and Cmd+C/V/X/A work in text inputs.
+  Menu.setApplicationMenu(
+    Menu.buildFromTemplate([
+      { label: 'AiMI', submenu: [{ role: 'quit', label: 'Quit AiMI' }] },
+      { role: 'editMenu' }
+    ])
+  )
+
+  ipcMain.on('app:quit', () => app.quit())
 
     registerStoreIpc()
   registerAiIpc(() => petWindow)

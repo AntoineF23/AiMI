@@ -16,6 +16,9 @@ const api = {
   openSettings(): void {
     ipcRenderer.send('open-settings')
   },
+  quitApp(): void {
+    ipcRenderer.send('app:quit')
+  },
   memory: {
     facts(): Promise<{ id: number; content: string; category: string; source: string; created_at: string }[]> {
       return ipcRenderer.invoke('memory:facts')

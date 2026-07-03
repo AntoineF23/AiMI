@@ -86,6 +86,17 @@ export function PetTab() {
           SHARING LETS YOUR PET KNOW WHICH APP IS IN FRONT SO IT CAN CHEER YOU ON.
         </div>
       </section>
+
+      <section>
+        <h2>QUIT</h2>
+        <button className="danger" onClick={() => window.aimi.quitApp()}>
+          QUIT AIMI
+        </button>
+        <div className="hint">
+          NO GUILT: YOUR PET KEEPS ITS MEMORY, XP AND STREAK, AND WILL BE HAPPY TO SEE YOU WHENEVER YOU'RE BACK. ALSO
+          AVAILABLE FROM THE MENU-BAR ICON, OR CMD+Q.
+        </div>
+      </section>
     </div>
   )
 }
