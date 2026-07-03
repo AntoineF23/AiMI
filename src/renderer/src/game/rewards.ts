@@ -45,7 +45,7 @@ export const STICKERS: StickerDef[] = [
   { id: 'ufo', name: 'Tiny UFO', rarity: 'epic' },
   { id: 'crown', name: 'Royal Crown', rarity: 'epic' },
   { id: 'planet', name: 'Pocket Planet', rarity: 'epic' },
-  { id: 'goldcat', name: 'Golden AiMI', rarity: 'legendary' }
+  { id: 'goldcat', name: 'Golden Unicorn', rarity: 'legendary' }
 ]
 
 export const TREAT_ICONS = ['apple', 'cookie', 'donut', 'sushi', 'boba']

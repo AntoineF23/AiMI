@@ -1,6 +1,6 @@
 # AiMI — your pixel pet, powered by any AI
 
-A tiny pixel-art cat that lives on top of your screen. It wanders along the bottom of your desktop, naps, does zoomies, asks what you're up to, learns about you over time — and turns your day into a gentle little game.
+A tiny pixel-art unicorn that lives on top of your screen. It wanders along the bottom of your desktop, naps, does zoomies, asks what you're up to, learns about you over time — and turns your day into a gentle little game.
 
 **Zero pressure by design.** Nothing decays, nothing dies, nothing guilts you. Every interaction only *adds*: XP for everything, confetti level-ups, surprise gifts, rare stickers, evolutions. Ignore it for a week — it greets you back with a present.
 

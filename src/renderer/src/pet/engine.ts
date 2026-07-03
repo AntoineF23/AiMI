@@ -167,7 +167,7 @@ export class PetEngine {
         this.ctx.translate(s, 0)
         this.ctx.scale(-1, 1)
       }
-      this.ctx.drawImage(this.hatImg, 0, this.animator.headDy)
+      this.ctx.drawImage(this.hatImg, this.animator.headDx, this.animator.headDy)
       this.ctx.restore()
     }
     this.particles.update(dt)

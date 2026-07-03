@@ -1,31 +1,43 @@
 {
   "name": "AiMI Classic",
-  "version": 1,
+  "version": 2,
   "frameSize": 32,
   "palette": {
     "outline": "#241a3d",
-    "body": "#a78bfa",
-    "shade": "#8a68f5",
-    "belly": "#eae2ff",
-    "earInner": "#ff9ecf",
-    "blush": "#ff8fb8",
+    "coat": "#f2f2f7",
+    "shade": "#c9cddd",
+    "mane": "#4f8fd9",
+    "maneShade": "#3a6fb0",
+    "hoof": "#3a3a4a",
     "eye": "#241a3d",
-    "shine": "#ffffff",
-    "mouth": "#5c3a6e"
+    "muzzle": "#9a9ab0",
+    "earInner": "#c9cddd",
+    "horn1": "#c05a5a",
+    "horn2": "#cf9a4f",
+    "horn3": "#5a9a6f",
+    "horn4": "#7a6fd0"
   },
   "animations": {
     "idle": {
       "file": "idle.png",
       "frames": 6,
-      "fps": 5,
+      "fps": 4,
       "loop": true,
       "headDy": [
-        0,
-        0,
-        2,
-        2,
-        0,
-        0
+        -5,
+        -5,
+        -4,
+        -4,
+        -5,
+        -5
+      ],
+      "headDx": [
+        9,
+        9,
+        9,
+        9,
+        9,
+        9
       ]
     },
     "walk": {
@@ -34,12 +46,20 @@
       "fps": 8,
       "loop": true,
       "headDy": [
-        -1,
-        0,
-        0,
-        -1,
-        0,
-        0
+        -5,
+        -6,
+        -5,
+        -5,
+        -6,
+        -5
+      ],
+      "headDx": [
+        9,
+        9,
+        9,
+        9,
+        9,
+        9
       ]
     },
     "run": {
@@ -48,10 +68,16 @@
       "fps": 12,
       "loop": true,
       "headDy": [
-        -4,
         -6,
-        2,
-        -4
+        -8,
+        -9,
+        -5
+      ],
+      "headDx": [
+        9,
+        9,
+        9,
+        9
       ]
     },
     "sleep": {
@@ -60,10 +86,16 @@
       "fps": 2,
       "loop": true,
       "headDy": [
-        4,
-        6,
-        6,
-        4
+        2,
+        3,
+        3,
+        2
+      ],
+      "headDx": [
+        8,
+        8,
+        8,
+        8
       ]
     },
     "happy": {
@@ -72,26 +104,42 @@
       "fps": 10,
       "loop": false,
       "headDy": [
-        2,
-        -6,
-        -10,
-        -9,
         -4,
-        2
+        -8,
+        -10,
+        -10,
+        -7,
+        -5
+      ],
+      "headDx": [
+        9,
+        9,
+        9,
+        9,
+        9,
+        9
       ]
     },
     "eat": {
       "file": "eat.png",
       "frames": 6,
-      "fps": 8,
+      "fps": 6,
       "loop": false,
       "headDy": [
-        0,
-        0,
-        2,
-        2,
-        0,
-        2
+        1,
+        7,
+        7,
+        7,
+        7,
+        1
+      ],
+      "headDx": [
+        11,
+        12,
+        13,
+        12,
+        13,
+        11
       ]
     },
     "think": {
@@ -100,10 +148,16 @@
       "fps": 4,
       "loop": true,
       "headDy": [
-        0,
-        0,
-        2,
-        0
+        -6,
+        -6,
+        -6,
+        -6
+      ],
+      "headDx": [
+        9,
+        9,
+        9,
+        9
       ]
     },
     "wave": {
@@ -112,10 +166,16 @@
       "fps": 8,
       "loop": true,
       "headDy": [
-        0,
-        0,
-        0,
-        0
+        -6,
+        -6,
+        -6,
+        -6
+      ],
+      "headDx": [
+        9,
+        9,
+        9,
+        9
       ]
     },
     "drag": {
@@ -124,8 +184,12 @@
       "fps": 4,
       "loop": true,
       "headDy": [
-        -2,
-        -1
+        -5,
+        -4
+      ],
+      "headDx": [
+        9,
+        9
       ]
     },
     "land": {
@@ -134,8 +198,12 @@
       "fps": 12,
       "loop": false,
       "headDy": [
-        4,
-        2
+        -4,
+        -5
+      ],
+      "headDx": [
+        9,
+        9
       ]
     }
   }

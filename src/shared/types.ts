@@ -41,8 +41,8 @@ export const DEFAULT_GAME_STATE: GameState = {
 
 export const BUILTIN_SKINS = [
   { id: 'default', label: 'CLASSIC' },
-  { id: 'mint', label: 'MINTY' },
-  { id: 'peach', label: 'PEACHY' }
+  { id: 'mint', label: 'FROST' },
+  { id: 'peach', label: 'EMBER' }
 ]
 
 /** Evolution stages: the pet grows with its level. */

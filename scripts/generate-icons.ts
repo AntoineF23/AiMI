@@ -392,22 +392,23 @@ ooooooooooooooo`)
 .....ooooo`)
   },
   goldcat: {
-    palette: { Y: '#ffd75e', O: '#ff9d3f', K: '#241a3d' },
+    palette: { Y: '#ffd75e', O: '#ff9d3f', K: '#241a3d', W: '#fff3c4' },
     rows: grid(`
-.
-..o.........o
-.oYo.......oYo
-.oYYo.....oYYo
-.oYYYooooOYYYo
+...........oo
+..........oWo
+..........oWo
+...oo....oWo
+...oYo..oYYo
+...oYYooYYYYo
+...oYYYYYYYYYo
+..oYYYYYYYYYYYo
+..oYYKYYYYYYOYo
 .oYYYYYYYYYYYo
-oYYYYYYYYYYYYYo
-oYYKKYYYYYKKYYo
-oYYKKYYYYYKKYYo
-oYYYYYYOYYYYYYo
-.oYYYYOOOYYYYo
-.oYYYYYYYYYYYo
-..oYYYYYYYYYo
-...ooooooooo`)
+.oYYYYYYYYYo
+oYYYYYYYYo
+oYYooYYYo
+oYo..oYo
+.o....o`)
   },
   bubble: {
     palette: { W: '#f4f4f8', K: '#241a3d' },

@@ -2,12 +2,13 @@
  * Generates the default AiMI skin: pixel-art sprite sheets for every animation,
  * a skin.json manifest, and the macOS tray icon.
  *
- * The pet is drawn procedurally (shapes + per-frame params) so animations stay
- * consistent and palettes can be swapped to create skin variants.
+ * The pet is a small, dignified unicorn drawn in side profile (facing right —
+ * the engine mirrors it when walking left). Drawn procedurally (shapes +
+ * per-frame params) so animations stay consistent and palettes can be swapped
+ * to create skin variants.
  *
- * Output: src/renderer/public/skins/default/*  and  resources/tray*.png
- * Also writes a 6x-scaled contact sheet to scratch for visual inspection
- * when --preview <dir> is passed.
+ * Output: src/renderer/public/skins/<skin>/*  and  resources/tray*.png
+ * `--preview <dir>` writes a 6x contact sheet for visual inspection.
  */
 import { PNG } from 'pngjs'
 import { mkdirSync, writeFileSync } from 'node:fs'
@@ -18,54 +19,59 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const SIZE = 32
 
 // ---------------------------------------------------------------------------
-// Palette
+// Palettes
 // ---------------------------------------------------------------------------
 
 const PALETTE = {
   outline: '#241a3d',
-  body: '#a78bfa',
-  shade: '#8a68f5',
-  belly: '#eae2ff',
-  earInner: '#ff9ecf',
-  blush: '#ff8fb8',
+  coat: '#f2f2f7',
+  shade: '#c9cddd',
+  mane: '#4f8fd9',
+  maneShade: '#3a6fb0',
+  hoof: '#3a3a4a',
   eye: '#241a3d',
-  shine: '#ffffff',
-  mouth: '#5c3a6e'
+  muzzle: '#9a9ab0',
+  earInner: '#c9cddd',
+  horn1: '#c05a5a', // base → tip
+  horn2: '#cf9a4f',
+  horn3: '#5a9a6f',
+  horn4: '#7a6fd0'
 } as const
 
 type ColorKey = keyof typeof PALETTE
 type Palette = Record<ColorKey, string>
 
-/** Bundled palette-swap skins — same art, new fur. */
+/** Bundled palette-swap skins — same unicorn, new coat and mane. */
 const SKINS: Record<string, { title: string; palette: Palette }> = {
   default: { title: 'AiMI Classic', palette: { ...PALETTE } },
   mint: {
-    title: 'Minty',
+    title: 'Frost',
     palette: {
       ...PALETTE,
-      body: '#5eead4',
-      shade: '#2dd4bf',
-      belly: '#ecfdf5',
-      earInner: '#fda4af',
-      blush: '#fb7185'
+      coat: '#eef5f7',
+      shade: '#c4d8de',
+      mane: '#5fc4d9',
+      maneShade: '#3f9db3',
+      horn1: '#5f8fd0',
+      horn2: '#5fb0c9',
+      horn3: '#7a6fd0',
+      horn4: '#9a8fe0'
     }
   },
   peach: {
-    title: 'Peachy',
+    title: 'Ember',
     palette: {
       ...PALETTE,
-      body: '#fdba74',
-      shade: '#fb923c',
-      belly: '#fff7ed',
-      earInner: '#f9a8d4',
-      blush: '#f472b6'
+      coat: '#f6efe3',
+      shade: '#dfd0b8',
+      mane: '#d97742',
+      maneShade: '#b0562a',
+      horn1: '#c05a5a',
+      horn2: '#d9903f',
+      horn3: '#d9c94f',
+      horn4: '#cf9a4f'
     }
   }
-}
-
-function hexToRgba(hex: string): [number, number, number, number] {
-  const n = parseInt(hex.slice(1), 16)
-  return [(n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff, 255]
 }
 
 // ---------------------------------------------------------------------------
@@ -83,7 +89,7 @@ class Grid {
 
   set(x: number, y: number, c: ColorKey) {
     if (x < 0 || y < 0 || x >= this.w || y >= this.h) return
-    this.cells[y * this.w + x] = c
+    this.cells[Math.round(y) * this.w + Math.round(x)] = c
   }
 
   get(x: number, y: number): ColorKey | null {
@@ -111,18 +117,12 @@ class Grid {
     for (let y = 0; y < this.h; y++) {
       for (let x = 0; x < this.w; x++) {
         if (this.get(x, y) !== null) continue
-        const touching =
-          (this.get(x - 1, y) ?? 'outline') !== 'outline' ||
-          (this.get(x + 1, y) ?? 'outline') !== 'outline' ||
-          (this.get(x, y - 1) ?? 'outline') !== 'outline' ||
-          (this.get(x, y + 1) ?? 'outline') !== 'outline'
         if (
           (this.get(x - 1, y) && this.get(x - 1, y) !== 'outline') ||
           (this.get(x + 1, y) && this.get(x + 1, y) !== 'outline') ||
           (this.get(x, y - 1) && this.get(x, y - 1) !== 'outline') ||
           (this.get(x, y + 1) && this.get(x, y + 1) !== 'outline')
         ) {
-          void touching
           toOutline.push([x, y])
         }
       }
@@ -132,168 +132,194 @@ class Grid {
 }
 
 // ---------------------------------------------------------------------------
-// The cat, parameterized per frame
+// The unicorn, parameterized per frame
 // ---------------------------------------------------------------------------
 
-interface FrameParams {
-  dy?: number // vertical offset (bounce, jumps)
-  squash?: number // >0 squashed (wider/shorter), <0 stretched
-  blink?: boolean
-  eyesClosed?: boolean // cozy ˘‿˘ arcs (sleep)
-  wideEyes?: boolean // startled O_O (being dragged)
-  lookX?: -1 | 0 | 1
-  lookY?: -1 | 0 | 1
-  mouthOpen?: 0 | 1 | 2
-  smile?: boolean
-  tail?: 0 | 1 | 2 | 3
-  feet?: 'stand' | 'left' | 'right' | 'dangle' | 'none'
-  pawUpY?: number // if set, right paw raised, offset by this many px
-  lying?: boolean // sleeping pose
-  earLift?: number
+interface Leg {
+  dx?: number
+  lift?: number
 }
 
-/** Draws one frame; returns the ear-top Y so hats can track the head. */
-function drawCat(g: Grid, p: FrameParams): number {
+interface UPose {
+  dy?: number // whole-body vertical offset
+  legs?: [Leg, Leg, Leg, Leg] // backFar, backNear, frontFar, frontNear
+  tail?: 0 | 1 | 2 | 3
+  eye?: 'open' | 'blink' | 'closed' | 'wide' | 'up'
+  headDy?: number // head+neck offset (positive = lowered, grazing)
+  headDx?: number
+  earFlick?: boolean
+  lying?: boolean
+  maneFlow?: boolean // streaming back when galloping
+}
+
+const LEGS_STAND: [Leg, Leg, Leg, Leg] = [{}, {}, {}, {}]
+
+/** Draws one frame; returns the hat anchor offset {dx, dy} vs the base pose. */
+function drawUnicorn(g: Grid, p: UPose): { dx: number; dy: number } {
   const dy = p.dy ?? 0
-  const squash = p.squash ?? 0
-  const lying = p.lying ?? false
-  const earLift = p.earLift ?? 0
+  const headDx = p.headDx ?? 0
+  const headDy = p.headDy ?? 0
+  const eye = p.eye ?? 'open'
 
-  const cx = 16
-  const cy = (lying ? 22 : 20) + dy + squash
-  const rx = (lying ? 11 : 9) + Math.max(0, squash)
-  const ry = (lying ? 6 : 8) - Math.abs(squash) * (squash > 0 ? 1 : -0.5)
+  if (p.lying) {
+    drawLying(g, p)
+    // hat anchor: hats are authored centered on x~15.5 with a brim at y~10;
+    // the unicorn skull sits at (21,14+dy) when lying
+    return { dx: 8, dy: 2 + dy }
+  }
 
-  // tail (behind body), 4 sway frames on the right side
+  // tail (behind body) — four sway/stream variants
   const tailFrames: [number, number][][] = [
     [
-      [26, 22],
-      [27, 21],
-      [28, 20],
-      [28, 19]
+      [6, 14],
+      [5, 16],
+      [4, 18],
+      [4, 20],
+      [5, 22],
+      [6, 24]
     ],
     [
-      [26, 22],
-      [27, 21],
-      [28, 21],
-      [29, 20]
+      [6, 14],
+      [4, 16],
+      [3, 18],
+      [3, 20],
+      [4, 22],
+      [5, 24]
     ],
     [
-      [26, 22],
-      [27, 22],
-      [28, 22],
-      [29, 21]
+      [6, 14],
+      [5, 16],
+      [5, 18],
+      [4, 20],
+      [4, 22],
+      [6, 23]
     ],
+    // streaming back (gallop)
     [
-      [26, 22],
-      [27, 21],
-      [27, 20],
-      [27, 19]
+      [5, 14],
+      [3, 14],
+      [1, 15],
+      [2, 17],
+      [4, 18],
+      [3, 20]
     ]
   ]
-  for (const [tx, ty] of tailFrames[p.tail ?? 0]) {
-    g.set(tx, ty + dy + (lying ? 2 : 0), 'shade')
-    g.set(tx, ty + 1 + dy + (lying ? 2 : 0), 'shade')
-  }
+  tailFrames[p.tail ?? 0].forEach(([tx, ty], i) => {
+    g.fillRect(tx, ty + dy, 2, 2, i % 2 === 0 ? 'mane' : 'maneShade')
+  })
 
-  // ears (triangles), inner pink
-  const earTopY = Math.round(cy - ry - 3 - earLift)
-  const drawEar = (apexX: number) => {
-    for (let i = 0; i < 5; i++) {
-      const y = earTopY + i
-      const half = Math.floor(i / 2) + (i > 0 ? 1 : 0)
-      for (let x = apexX - half; x <= apexX + half; x++) g.set(x, y, 'body')
-      if (i >= 2) g.set(apexX, y, 'earInner')
-    }
-  }
-  drawEar(cx - 5)
-  drawEar(cx + 5)
+  // legs: [backFar, backNear, frontFar, frontNear] — far pair shaded for depth
+  const legs = p.legs ?? LEGS_STAND
+  const baseX = [9, 12, 19, 22]
+  const far = [true, false, true, false]
+  legs.forEach((leg, i) => {
+    const lx = baseX[i] + (leg.dx ?? 0)
+    const lift = leg.lift ?? 0
+    const topY = 20 + dy
+    const footY = 26 + dy - lift
+    if (footY > topY) g.fillRect(lx, topY, 2, footY - topY + 1, far[i] ? 'shade' : 'coat')
+    g.fillRect(lx, footY + 1, 2, 2, 'hoof')
+  })
 
   // body
-  g.fillEllipse(cx, cy, rx, ry, 'body')
+  g.fillEllipse(15.5, 17.5 + dy, 8.5, 5, 'coat')
+  // belly shading
+  g.fillRect(10, 21 + dy, 10, 1, 'shade')
 
-  // belly patch
-  if (!lying) g.fillEllipse(cx, cy + 3, rx - 4, ry - 4, 'belly')
-
-  // feet
-  const footY = Math.round(cy + ry - 1)
-  const feet = p.feet ?? 'stand'
-  if (feet === 'stand') {
-    g.fillRect(cx - 6, footY, 3, 2, 'shade')
-    g.fillRect(cx + 3, footY, 3, 2, 'shade')
-  } else if (feet === 'left') {
-    g.fillRect(cx - 7, footY - 1, 3, 2, 'shade')
-    g.fillRect(cx + 3, footY, 3, 2, 'shade')
-  } else if (feet === 'right') {
-    g.fillRect(cx - 6, footY, 3, 2, 'shade')
-    g.fillRect(cx + 4, footY - 1, 3, 2, 'shade')
-  } else if (feet === 'dangle') {
-    g.fillRect(cx - 6, footY + 2, 3, 2, 'shade')
-    g.fillRect(cx + 3, footY + 2, 3, 2, 'shade')
+  // neck: blocks lerped from shoulder to head base
+  const sx = 19
+  const sy = 11 + dy
+  const hx = 22 + headDx
+  const hy = 7 + headDy + dy
+  for (let i = 0; i <= 5; i++) {
+    const t = i / 5
+    g.fillRect(Math.round(sx + (hx - sx) * t), Math.round(sy + (hy - sy) * t), 3, 4, 'coat')
   }
 
-  // raised paw (wave)
-  if (p.pawUpY !== undefined) {
-    const py = Math.round(cy - 2 - p.pawUpY)
-    g.fillRect(cx + rx - 2, py, 3, 3, 'body')
-    g.set(cx + rx - 1, py + 1, 'belly')
+  // head (origin = hx, hy): skull + snout to the right
+  g.fillRect(hx, hy, 5, 5, 'coat')
+  g.fillRect(hx + 4, hy + 2, 3, 3, 'coat')
+  g.set(hx + 6, hy + 3, 'muzzle') // nostril
+
+  // ear
+  const earY = hy - 2 - (p.earFlick ? 1 : 0)
+  g.fillRect(hx - 1, earY, 2, 2, 'coat')
+  g.set(hx - 1, earY + 1, 'earInner')
+
+  // horn: slanted muted-rainbow bands, base → tip
+  g.fillRect(hx + 1, hy - 2, 2, 1, 'horn1')
+  g.fillRect(hx + 1, hy - 3, 2, 1, 'horn2')
+  g.fillRect(hx + 2, hy - 4, 2, 1, 'horn3')
+  g.fillRect(hx + 2, hy - 5, 2, 1, 'horn4')
+
+  // mane: forelock + crest along the neck, with flow variant
+  g.fillRect(hx, hy - 1, 2, 1, 'mane')
+  const flow = p.maneFlow ? -1 : 0
+  for (let i = 0; i <= 5; i++) {
+    const t = i / 5
+    const mx = Math.round(sx + (hx - sx) * t) - 1 + flow * Math.round(t * 2)
+    const my = Math.round(sy + (hy - sy) * t) - 1
+    g.fillRect(mx, my, 2, 2, i % 2 === 0 ? 'mane' : 'maneShade')
   }
+  g.fillRect(16, 12 + dy, 2, 2, 'maneShade') // shoulder tuft
 
-  // face
-  const eyeY = Math.round(cy - 2)
-  const lx = cx - 4 + (p.lookX ?? 0)
-  const rxE = cx + 3 + (p.lookX ?? 0)
-  const ey = eyeY + (p.lookY ?? 0)
-
-  if (p.eyesClosed) {
-    // cozy arcs ˘ ˘
-    g.set(lx, ey + 1, 'eye')
-    g.set(lx + 1, ey, 'eye')
-    g.set(lx - 1, ey, 'eye')
-    g.set(rxE, ey + 1, 'eye')
-    g.set(rxE + 1, ey, 'eye')
-    g.set(rxE - 1, ey, 'eye')
-  } else if (p.blink) {
-    g.set(lx - 1, ey + 1, 'eye')
-    g.set(lx, ey + 1, 'eye')
-    g.set(rxE, ey + 1, 'eye')
-    g.set(rxE + 1, ey + 1, 'eye')
-  } else if (p.wideEyes) {
-    g.fillRect(lx - 1, ey - 1, 3, 3, 'eye')
-    g.fillRect(rxE - 1, ey - 1, 3, 3, 'eye')
-    g.set(lx, ey, 'shine')
-    g.set(rxE, ey, 'shine')
-  } else {
-    g.fillRect(lx - 1, ey - 1, 2, 3, 'eye')
-    g.fillRect(rxE, ey - 1, 2, 3, 'eye')
-    g.set(lx - 1, ey - 1, 'shine')
-    g.set(rxE, ey - 1, 'shine')
-  }
-
-  // blush
-  g.fillRect(cx - 8, eyeY + 2, 2, 1, 'blush')
-  g.fillRect(cx + 7, eyeY + 2, 2, 1, 'blush')
-
-  // mouth
-  const my = eyeY + 3
-  const mouthOpen = p.mouthOpen ?? 0
-  if (mouthOpen === 1) {
-    g.fillRect(cx - 1, my, 2, 2, 'mouth')
-  } else if (mouthOpen === 2) {
-    g.fillRect(cx - 1, my - 1, 3, 3, 'mouth')
-    g.set(cx, my + 1, 'blush')
-  } else if (p.smile) {
-    g.set(cx - 2, my - 1, 'mouth')
-    g.set(cx - 1, my, 'mouth')
-    g.set(cx, my, 'mouth')
-    g.set(cx + 1, my - 1, 'mouth')
-  } else {
-    g.set(cx - 1, my, 'mouth')
-    g.set(cx, my, 'mouth')
+  // eye — small and composed, nothing kawaii
+  const ex = hx + 3
+  const eyY = hy + 1
+  if (eye === 'open') {
+    g.fillRect(ex, eyY, 1, 2, 'eye')
+  } else if (eye === 'up') {
+    g.fillRect(ex, eyY - 1, 1, 2, 'eye')
+  } else if (eye === 'blink' || eye === 'closed') {
+    g.set(ex, eyY + 1, 'eye')
+  } else if (eye === 'wide') {
+    g.fillRect(ex - 1, eyY, 2, 2, 'eye')
   }
 
   g.outline()
-  return earTopY
+  // hat anchor: shift the cat-era hat art (+9,-5) onto the unicorn skull
+  return { dx: hx - 13, dy: hy - 12 }
+}
+
+/** Sleeping pose: legs folded, head resting low, tail curled. */
+function drawLying(g: Grid, p: UPose): void {
+  const dy = p.dy ?? 0
+  // tail curled at the back
+  ;[
+    [5, 20],
+    [4, 22],
+    [5, 24],
+    [7, 25]
+  ].forEach(([tx, ty], i) => g.fillRect(tx, ty, 2, 2, i % 2 === 0 ? 'mane' : 'maneShade'))
+
+  // body low and long
+  g.fillEllipse(15, 21 + dy, 9, 4.5, 'coat')
+  // folded-leg hoof nubs
+  g.fillRect(11, 24, 2, 2, 'hoof')
+  g.fillRect(18, 24, 2, 2, 'hoof')
+
+  // short neck + resting head
+  const hx = 21
+  const hy = 14 + dy
+  g.fillRect(19, 17 + dy, 4, 4, 'coat')
+  g.fillRect(hx, hy, 5, 5, 'coat')
+  g.fillRect(hx + 4, hy + 2, 3, 3, 'coat')
+  g.set(hx + 6, hy + 3, 'muzzle')
+
+  // ear, horn, forelock
+  g.fillRect(hx - 1, hy - 2, 2, 2, 'coat')
+  g.set(hx - 1, hy - 1, 'earInner')
+  g.fillRect(hx + 1, hy - 2, 2, 1, 'horn1')
+  g.fillRect(hx + 1, hy - 3, 2, 1, 'horn2')
+  g.fillRect(hx + 2, hy - 4, 2, 1, 'horn3')
+  g.fillRect(hx + 2, hy - 5, 2, 1, 'horn4')
+  g.fillRect(hx, hy - 1, 2, 1, 'mane')
+  g.fillRect(18, 16 + dy, 2, 2, 'maneShade')
+
+  // closed eye
+  g.set(hx + 3, hy + 2, 'eye')
+
+  g.outline()
 }
 
 // ---------------------------------------------------------------------------
@@ -303,19 +329,21 @@ function drawCat(g: Grid, p: FrameParams): number {
 interface AnimDef {
   fps: number
   loop: boolean
-  frames: FrameParams[]
+  frames: UPose[]
 }
+
+const walkLegs = (a: Leg, b: Leg, c: Leg, d: Leg): [Leg, Leg, Leg, Leg] => [a, b, c, d]
 
 const ANIMATIONS: Record<string, AnimDef> = {
   idle: {
-    fps: 5,
+    fps: 4,
     loop: true,
     frames: [
       { tail: 0 },
       { tail: 1 },
-      { squash: 1, tail: 2, feet: 'stand' },
-      { squash: 1, tail: 2, blink: true },
-      { tail: 1 },
+      { tail: 1, dy: 1, earFlick: true },
+      { tail: 2, dy: 1 },
+      { tail: 1, eye: 'blink' },
       { tail: 0 }
     ]
   },
@@ -323,92 +351,92 @@ const ANIMATIONS: Record<string, AnimDef> = {
     fps: 8,
     loop: true,
     frames: [
-      { feet: 'left', dy: -1, tail: 1 },
-      { feet: 'left', dy: 0, tail: 1 },
-      { feet: 'stand', dy: 0, tail: 2 },
-      { feet: 'right', dy: -1, tail: 2 },
-      { feet: 'right', dy: 0, tail: 1 },
-      { feet: 'stand', dy: 0, tail: 0 }
+      { legs: LEGS_STAND, tail: 1 },
+      { legs: walkLegs({}, { dx: 1, lift: 2 }, { dx: 1, lift: 2 }, {}), dy: -1, tail: 1 },
+      { legs: walkLegs({}, { dx: 2 }, { dx: 2 }, {}), tail: 2 },
+      { legs: LEGS_STAND, tail: 2 },
+      { legs: walkLegs({ dx: 1, lift: 2 }, {}, {}, { dx: 1, lift: 2 }), dy: -1, tail: 1 },
+      { legs: walkLegs({ dx: 2 }, {}, {}, { dx: 2 }), tail: 0 }
     ]
   },
   run: {
     fps: 12,
     loop: true,
     frames: [
-      { feet: 'left', dy: -2, squash: -1, tail: 3, earLift: 1 },
-      { feet: 'right', dy: -3, squash: -1, tail: 3, earLift: 2 },
-      { feet: 'stand', dy: 0, squash: 1, tail: 2 },
-      { feet: 'right', dy: -2, squash: -1, tail: 3, earLift: 1 }
+      { legs: walkLegs({ dx: 3 }, { dx: 2 }, { dx: -2 }, { dx: -1 }), dy: -1, tail: 3, maneFlow: true },
+      { legs: walkLegs({ dx: -2, lift: 1 }, { dx: -3, lift: 1 }, { dx: 2, lift: 1 }, { dx: 3, lift: 1 }), dy: -3, tail: 3, maneFlow: true },
+      { legs: walkLegs({ dx: 1, lift: 2 }, { dx: 0, lift: 2 }, { dx: 0, lift: 2 }, { dx: 1, lift: 2 }), dy: -4, tail: 3, maneFlow: true },
+      { legs: walkLegs({ dx: -1, lift: 1 }, { dx: 0 }, { dx: 1 }, { dx: 0 }), tail: 3, maneFlow: true }
     ]
   },
   sleep: {
     fps: 2,
     loop: true,
     frames: [
-      { lying: true, eyesClosed: true, tail: 2, feet: 'none' },
-      { lying: true, eyesClosed: true, squash: 1, tail: 2, feet: 'none' },
-      { lying: true, eyesClosed: true, squash: 1, tail: 1, feet: 'none' },
-      { lying: true, eyesClosed: true, tail: 1, feet: 'none' }
+      { lying: true },
+      { lying: true, dy: 1 },
+      { lying: true, dy: 1 },
+      { lying: true }
     ]
   },
   happy: {
     fps: 10,
     loop: false,
     frames: [
-      { squash: 1, smile: true, tail: 1 },
-      { dy: -4, squash: -1, smile: true, feet: 'dangle', tail: 3, earLift: 1 },
-      { dy: -7, squash: -1, smile: true, eyesClosed: true, feet: 'dangle', tail: 3, earLift: 2 },
-      { dy: -7, smile: true, eyesClosed: true, feet: 'dangle', tail: 3, earLift: 2 },
-      { dy: -3, smile: true, feet: 'dangle', tail: 1, earLift: 1 },
-      { squash: 1, smile: true, tail: 1 }
+      { dy: 1, tail: 1 },
+      { legs: walkLegs({}, {}, { dx: 2, lift: 4 }, { dx: 2, lift: 4 }), dy: -1, headDy: -2, tail: 2 },
+      { legs: walkLegs({}, {}, { dx: 3, lift: 6 }, { dx: 3, lift: 6 }), dy: -2, headDy: -3, tail: 3, maneFlow: true },
+      { legs: walkLegs({}, {}, { dx: 3, lift: 6 }, { dx: 3, lift: 6 }), dy: -2, headDy: -3, tail: 3, maneFlow: true, eye: 'blink' },
+      { legs: walkLegs({}, {}, { dx: 2, lift: 3 }, { dx: 2, lift: 3 }), dy: -1, headDy: -1, tail: 1 },
+      { tail: 1 }
     ]
   },
   eat: {
-    fps: 8,
+    fps: 6,
     loop: false,
     frames: [
-      { mouthOpen: 1, tail: 1 },
-      { mouthOpen: 2, tail: 1 },
-      { mouthOpen: 2, squash: 1, tail: 2 },
-      { mouthOpen: 1, squash: 1, tail: 2 },
-      { smile: true, eyesClosed: true, tail: 1 },
-      { smile: true, eyesClosed: true, squash: 1, tail: 0 }
+      { headDy: 6, headDx: 2, tail: 1 },
+      { headDy: 12, headDx: 3, eye: 'blink', tail: 1 },
+      { headDy: 12, headDx: 4, eye: 'blink', tail: 2 },
+      { headDy: 12, headDx: 3, eye: 'blink', tail: 2 },
+      { headDy: 12, headDx: 4, eye: 'blink', tail: 1 },
+      { headDy: 6, headDx: 2, tail: 0 }
     ]
   },
   think: {
     fps: 4,
     loop: true,
     frames: [
-      { lookX: -1, lookY: -1, tail: 0 },
-      { lookX: -1, lookY: -1, tail: 1 },
-      { lookX: -1, lookY: -1, tail: 2, squash: 1 },
-      { lookX: -1, lookY: -1, tail: 1 }
+      { eye: 'up', headDy: -1, tail: 0 },
+      { eye: 'up', headDy: -1, tail: 1 },
+      { eye: 'up', headDy: -1, tail: 2, earFlick: true },
+      { eye: 'up', headDy: -1, tail: 1 }
     ]
   },
   wave: {
     fps: 8,
     loop: true,
     frames: [
-      { pawUpY: 4, smile: true, tail: 1 },
-      { pawUpY: 6, smile: true, tail: 2 },
-      { pawUpY: 4, smile: true, tail: 1 },
-      { pawUpY: 6, smile: true, tail: 2 }
+      { legs: walkLegs({}, {}, {}, { dx: 2, lift: 5 }), headDy: -1, tail: 1 },
+      { legs: walkLegs({}, {}, {}, { dx: 4, lift: 4 }), headDy: -1, tail: 2 },
+      { legs: walkLegs({}, {}, {}, { dx: 2, lift: 5 }), headDy: -1, tail: 1 },
+      { legs: walkLegs({}, {}, {}, { dx: 4, lift: 4 }), headDy: -1, tail: 2 }
     ]
   },
   drag: {
     fps: 4,
     loop: true,
     frames: [
-      { wideEyes: true, feet: 'dangle', earLift: 2, tail: 3 },
-      { wideEyes: true, feet: 'dangle', earLift: 2, tail: 0, dy: 1 }
+      { legs: walkLegs({ dx: -1, lift: 1 }, { dx: -1 }, { dx: 1, lift: 1 }, { dx: 1 }), eye: 'wide', tail: 2 },
+      { legs: walkLegs({ dx: -1 }, { dx: -1, lift: 1 }, { dx: 1 }, { dx: 1, lift: 1 }), eye: 'wide', tail: 1, dy: 1 }
     ]
   },
   land: {
     fps: 12,
     loop: false,
     frames: [
-      { squash: 2, wideEyes: true, feet: 'stand' },
-      { squash: 1, feet: 'stand', smile: true }
+      { legs: walkLegs({ dx: -2 }, { dx: -2 }, { dx: 2 }, { dx: 2 }), dy: 1, eye: 'wide' },
+      { legs: LEGS_STAND, tail: 1 }
     ]
   }
 }
@@ -416,6 +444,11 @@ const ANIMATIONS: Record<string, AnimDef> = {
 // ---------------------------------------------------------------------------
 // PNG helpers
 // ---------------------------------------------------------------------------
+
+function hexToRgba(hex: string): [number, number, number, number] {
+  const n = parseInt(hex.slice(1), 16)
+  return [(n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff, 255]
+}
 
 function gridToPng(grids: Grid[], scale = 1, palette: Palette = PALETTE): PNG {
   const w = grids.reduce((s, g) => s + g.w, 0) * scale
@@ -445,7 +478,7 @@ function gridToPng(grids: Grid[], scale = 1, palette: Palette = PALETTE): PNG {
 }
 
 // ---------------------------------------------------------------------------
-// Tray icon: minimal cat-head silhouette (macOS template image: black + alpha)
+// Tray icon: unicorn head silhouette (macOS template image: black + alpha)
 // ---------------------------------------------------------------------------
 
 function drawTrayIcon(size: 16 | 32): PNG {
@@ -461,23 +494,22 @@ function drawTrayIcon(size: 16 | 32): PNG {
         png.data[idx + 3] = 255
       }
   }
-  // 16x16 cat head: ears + round head
   const rows = [
-    '..X.........X...',
-    '.XX.X.....X.XX..',
-    '.XXXX.....XXXX..',
-    '.XXXXXXXXXXXXX..',
-    '.XXXXXXXXXXXXX..',
-    'XXXXXXXXXXXXXXX.',
-    'XXXXXXXXXXXXXXX.',
-    'XXX..XXXXX..XXX.',
-    'XXX..XXXXX..XXX.',
-    'XXXXXXXXXXXXXXX.',
-    'XXXXXXX.XXXXXXX.',
-    'XXXXXX...XXXXXX.',
-    '.XXXXXXXXXXXXX..',
-    '.XXXXXXXXXXXXX..',
-    '..XXXXXXXXXXX...',
+    '..........XX....',
+    '.........XX.....',
+    '....X...XX......',
+    '....XX.XXXX.....',
+    '....XXXXXXXXX...',
+    '...XXXXXXXXXXXX.',
+    '...XXXXXXXXXXXX.',
+    '..XXXXXXXX..X...',
+    '.XXXXXXXXX......',
+    '.XXXXXXXXX......',
+    'XXXXXXXXX.......',
+    'XXXXXXXX........',
+    'XXX..XXX........',
+    'XXX..XXX........',
+    'XXX..XXX........',
     '................'
   ]
   rows.forEach((row, y) => {
@@ -496,17 +528,21 @@ mkdirSync(resourcesDir, { recursive: true })
 // render all frames once (palette applied at write time)
 const allGrids: Record<string, Grid[]> = {}
 const allHeadDy: Record<string, number[]> = {}
-const BASE_EAR_TOP = 9
+const allHeadDx: Record<string, number[]> = {}
 for (const [name, def] of Object.entries(ANIMATIONS)) {
   const grids: Grid[] = []
   const headDy: number[] = []
+  const headDx: number[] = []
   for (const params of def.frames) {
     const g = new Grid(SIZE, SIZE)
-    headDy.push(drawCat(g, params) - BASE_EAR_TOP)
+    const anchor = drawUnicorn(g, params)
+    headDy.push(anchor.dy)
+    headDx.push(anchor.dx)
     grids.push(g)
   }
   allGrids[name] = grids
   allHeadDy[name] = headDy
+  allHeadDx[name] = headDx
 }
 
 for (const [skinName, skin] of Object.entries(SKINS)) {
@@ -517,10 +553,13 @@ for (const [skinName, skin] of Object.entries(SKINS)) {
     version: number
     frameSize: number
     palette: Record<string, string>
-    animations: Record<string, { file: string; frames: number; fps: number; loop: boolean; headDy: number[] }>
+    animations: Record<
+      string,
+      { file: string; frames: number; fps: number; loop: boolean; headDy: number[]; headDx: number[] }
+    >
   } = {
     name: skin.title,
-    version: 1,
+    version: 2,
     frameSize: SIZE,
     palette: { ...skin.palette },
     animations: {}
@@ -532,7 +571,8 @@ for (const [skinName, skin] of Object.entries(SKINS)) {
       frames: def.frames.length,
       fps: def.fps,
       loop: def.loop,
-      headDy: allHeadDy[name]
+      headDy: allHeadDy[name],
+      headDx: allHeadDx[name]
     }
   }
   writeFileSync(join(skinDir, 'skin.json'), JSON.stringify(manifest, null, 2))
@@ -548,7 +588,11 @@ if (previewFlag !== -1) {
   const scale = 6
   const rows = Object.entries(allGrids)
   const maxFrames = Math.max(...rows.map(([, g]) => g.length))
-  const sheet = new PNG({ width: maxFrames * SIZE * scale, height: rows.length * SIZE * scale, bgColor: { red: 255, green: 255, blue: 255 } })
+  const sheet = new PNG({
+    width: maxFrames * SIZE * scale,
+    height: rows.length * SIZE * scale,
+    bgColor: { red: 255, green: 255, blue: 255 }
+  })
   rows.forEach(([, grids], row) => {
     const strip = gridToPng(grids, scale)
     PNG.bitblt(strip, sheet, 0, 0, strip.width, strip.height, 0, row * SIZE * scale)

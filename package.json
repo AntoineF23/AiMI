@@ -1,6 +1,6 @@
 {
   "name": "aimi",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "description": "AiMI — a tiny AI-powered pixel pet that lives on your screen, learns about you, and celebrates everything you do.",
   "main": "./out/main/index.js",
   "author": "Antoine Fornas",
