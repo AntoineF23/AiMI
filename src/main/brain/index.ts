@@ -20,7 +20,7 @@ import {
 const TICK_MIN_MS = 10 * 60_000
 const TICK_MAX_MS = 22 * 60_000
 const IDLE_SKIP_SECONDS = 6 * 60
-const CONSOLIDATE_THRESHOLD = 30
+const CONSOLIDATE_THRESHOLD = 12
 
 const actionSchema = z.object({
   action: z.enum(['say', 'ask_user', 'ask_screenshot', 'idle']),
@@ -110,6 +110,11 @@ async function think(win: BrowserWindow): Promise<void> {
   } catch (err) {
     console.error('brain tick failed:', err instanceof Error ? err.message : err)
   }
+}
+
+/** Public entry: summarizes episodes into the profile once enough pile up. */
+export async function consolidateIfNeeded(): Promise<void> {
+  return consolidate()
 }
 
 async function consolidate(): Promise<void> {

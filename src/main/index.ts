@@ -197,7 +197,7 @@ app.whenReady().then(() => {
       [7000, () => shot('menu')],
       [7500, () => js(clickBtn(3))], // talk → chat panel
       [8500, () => shot('chat-open')],
-      [9000, () => js(typeAndSend("I'm watching this: https://www.youtube.com/watch?v=dQw4w9WgXcQ"))],
+      [9000, () => js(typeAndSend("btw I'm Antoine, I work as a product manager and I love padel and pixel art!"))],
       [12000, () => shot('chat-stream')],
       [17000, () => shot('chat-done')],
       [17500, () => js(`document.querySelector('.chat-peek')?.click()`)],

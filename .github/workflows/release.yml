@@ -23,7 +23,13 @@ jobs:
 
       - run: npm run typecheck
 
-      - name: Build and publish
-        run: npx electron-vite build && npx electron-builder --mac --publish always
+      - name: Build
+        run: npx electron-vite build && npx electron-builder --mac --publish never
+
+      - name: Upload to release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1 || \
+            gh release create "$GITHUB_REF_NAME" --verify-tag --title "AiMI $GITHUB_REF_NAME" --generate-notes
+          gh release upload "$GITHUB_REF_NAME" dist/*.dmg dist/*-mac.zip --clobber

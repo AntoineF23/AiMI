@@ -5,6 +5,8 @@ import { buildModel } from './registry'
 import { getPublicSettings, getResolvedSettings, updatePrefs, updateSettings } from './settings'
 import { memoryPromptBlock, recordEpisode } from '../memory'
 import { webContextFor } from '../tools/web'
+import { learnFromExchange } from '../brain/learn'
+import { consolidateIfNeeded } from '../brain'
 
 function personaPrompt(ctx: ChatContext): string {
   const memory = memoryPromptBlock()
@@ -118,7 +120,11 @@ export function registerAiIpc(getWindow: () => BrowserWindow | null): void {
         full += delta
         win.webContents.send('ai:chat:delta', { requestId: payload.requestId, delta })
       }
-      if (full.trim()) recordEpisode('chat_pet', full)
+      if (full.trim()) {
+        recordEpisode('chat_pet', full)
+        // learn about the human from what they just said (async, non-blocking)
+        void learnFromExchange(payload.messages, full).then(() => consolidateIfNeeded())
+      }
       win.webContents.send('ai:chat:done', { requestId: payload.requestId })
     } catch (err) {
       if (!controller.signal.aborted) {
