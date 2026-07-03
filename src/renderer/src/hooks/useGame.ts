@@ -200,15 +200,16 @@ export function useGame(
   const onPetClicked = useCallback(() => {
     sfx.pop()
     const u = uiRef.current
-    // toggle behavior: a pet click with anything open collapses it — panels never stack
-    if (u.menu || u.chat || u.games || u.album) {
-      closeAllPanels()
+    if (u.activeGame) return // don't cover a running game with the menu
+    // the pet always brings you back to its menu: an open panel is swapped
+    // for the menu (never stacked), and a second click on the menu closes it
+    if (u.menu) {
+      closeMenu()
       return
     }
-    if (u.activeGame) return // don't cover a running game with the menu
     engineRef.current?.hold()
-    setUi((prev) => ({ ...prev, menu: anchor(), bubble: null }))
-  }, [anchor, closeAllPanels, engineRef])
+    setUi((prev) => ({ ...prev, menu: anchor(), chat: null, games: false, album: false, bubble: null }))
+  }, [anchor, closeMenu, engineRef])
 
   const feedTreat = useCallback(() => {
     const s = stateRef.current
